@@ -43,7 +43,14 @@ from the command line, backed by a local JSON file for now.`,
 // rather than panicking or calling os.Exit itself — we handle exiting
 // here, similar to how a Java main() might catch an exception at the
 // top level and call System.exit(1).
+//
+// We explicitly pass cobra its arguments via SetArgs (running them
+// through joinMultiWordFlagValues first) rather than letting it read
+// os.Args on its own — this is what lets flags like --updateTitle
+// accept an unquoted multi-word value even when the binary is run
+// directly from a real shell, not just from the REPL.
 func Execute() {
+	rootCmd.SetArgs(joinMultiWordFlagValues(os.Args[1:]))
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)

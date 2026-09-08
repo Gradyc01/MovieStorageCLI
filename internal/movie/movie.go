@@ -6,7 +6,15 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode"
+
+	"regexp"
+
+	"golang.org/x/text/transform"
+	"golang.org/x/text/unicode/norm"
 )
+
+var slugRegexp = regexp.MustCompile(`[^a-z0-9-]`)
 
 // Movie is our domain object. Capitalized field names are "exported"
 // (public) — visible to any package that imports this one. If a field
@@ -102,11 +110,21 @@ func NewShowViaImdbLink(imdbLink string, seasonNumber int, rating float64) (*Mov
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
 
-// generateID is unexported (lowercase) — only code inside the movie
-// package can call it. This is Go's version of a private helper method.
-// For now it's a naive slug; swap for a UUID library later if you want.
 func generateID(title string, year int) string {
-	return fmt.Sprintf("%s-%d", strings.ToLower(strings.ReplaceAll(title, " ", "")), year)
+	// Normalize to NFD to separate base characters from diacritics (e.g., ō -> o + combining mark)
+	t := transform.Chain(norm.NFD, transform.RemoveFunc(isMn), norm.NFC)
+	cleanedTitle, _, _ := transform.String(t, title)
+
+	// Convert to lowercase, remove spaces, and strip all characters except a-z, 0-9, and '-'
+	slug := strings.ToLower(cleanedTitle)
+	slug = strings.ReplaceAll(slug, " ", "")
+	slug = slugRegexp.ReplaceAllString(slug, "")
+
+	return fmt.Sprintf("%s-%d", slug, year)
+}
+
+func isMn(r rune) bool {
+	return unicode.Is(unicode.Mn, r) // Identifies non-spacing diacritical marks
 }
 
 // Obtains release year through the release date.

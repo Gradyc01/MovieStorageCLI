@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
 
@@ -52,6 +53,11 @@ func RunInteractive() {
 			continue
 		}
 
+		// Let unquoted multi-word values work for flags like
+		// --updateTitle without requiring the user to wrap them in
+		// quotes — see joinMultiWordFlagValues in argparse.go.
+		args = joinMultiWordFlagValues(args)
+
 		// Cobra's flag values are "sticky": if you run `add X --year
 		// 2020` and then `add Y` (no --year), the old 2020 would
 		// otherwise linger on the flag. Since we're reusing the same
@@ -87,11 +93,14 @@ func RunInteractive() {
 // bookkeeping you wouldn't normally need in a one-shot CLI — it only
 // matters because we're reusing the same *cobra.Command instances
 // across many "invocations" within one process.
-func resetFlags(command interface{ Flags() *pflag.FlagSet }) {
+func resetFlags(command *cobra.Command) {
 	command.Flags().VisitAll(func(f *pflag.Flag) {
 		_ = f.Value.Set(f.DefValue)
 		f.Changed = false
 	})
+	for _, sub := range command.Commands() {
+		resetFlags(sub)
+	}
 }
 
 // splitArgs tokenizes a line of input the way a shell would for our

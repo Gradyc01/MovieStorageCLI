@@ -41,6 +41,10 @@ var listCmd = &cobra.Command{
 	},
 }
 
+func CallListCmd(movies []*movie.Movie) error {
+	return paginate(movies)
+}
+
 func init() {
 	rootCmd.AddCommand(listCmd)
 }
@@ -150,10 +154,17 @@ func paginate(movies []*movie.Movie) error {
 				selectedIndex++
 			}
 		case keyEnter:
-			if len(pageMovies) > 0 {
-				if err := showDetail(pageMovies[selectedIndex], interactive, fallbackReader); err != nil {
-					return err
-				}
+			if len(pageMovies) == 0 {
+				continue
+			}
+
+			action, err := showDetail(pageMovies[selectedIndex], interactive)
+			if err != nil {
+				return err
+			}
+
+			if action == detailQuit {
+				return nil
 			}
 		case keyQuit:
 			return nil
@@ -162,22 +173,53 @@ func paginate(movies []*movie.Movie) error {
 	}
 }
 
-// showDetail clears the screen, shows one movie's full detail view
-// (the same view the standalone `get` command produces), then blocks
-// until the user presses something to come back — so `list` and `get`
-// share one rendering path instead of drifting apart over time.
-func showDetail(m *movie.Movie, interactive bool, fallbackReader *bufio.Reader) error {
+// detailAction reports what happened while the user was inside
+// showDetail, so paginate() knows whether to redraw the list (stayed
+// inside `list`) or stop entirely (drop back to the REPL prompt or
+// shell, wherever `list` was called from).
+type detailAction int
+
+const (
+	detailBack detailAction = iota
+	detailQuit
+)
+
+// showDetail clears the screen and shows one movie's full detail view
+// (the same view the standalone `get` command produces), then waits
+// for a single keypress with two meanings — deliberately the REVERSE
+// of what those keys mean in the outer list view:
+//
+//	q      -> go back to the list (redraw and keep browsing)
+//	Enter  -> exit `list` entirely, back to a normal prompt
+//
+// The idea behind Enter exiting rather than doing something in-place
+// is that once you're back at a prompt, the regular commands
+// (`remove <id>`, future `update <id>`, etc.) are already available
+// and don't need to be reinvented as a separate mini command language
+// inside the detail view.
+func showDetail(m *movie.Movie, interactive bool) (detailAction, error) {
 	fmt.Print("\033[H\033[2J")
 	display.PrintMovieDetail(m)
 	fmt.Println()
+	fmt.Println("Press 'q' to go back to the list, or Enter to exit to the prompt.")
 
-	if interactive {
-		fmt.Println("Press any key to return to the list...")
-		_, err := readKey()
-		return err
+	for {
+		var k key
+		var err error
+		if interactive {
+			k, err = readKey()
+		}
+		if err != nil {
+			return detailBack, fmt.Errorf("could not read key input: %w", err)
+		}
+
+		switch k {
+		case keyQuit:
+			return detailBack, nil
+		case keyEnter:
+			return detailQuit, nil
+			// Any other key: ignore and wait again — no need to redraw,
+			// nothing about the screen has changed.
+		}
 	}
-
-	fmt.Print("Press Enter to return to the list: ")
-	_, err := fallbackReader.ReadString('\n')
-	return err
 }

@@ -9,6 +9,7 @@ package display
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"golang.org/x/term"
 )
@@ -33,14 +34,15 @@ const (
 	strikethrough = "\033[9m"
 
 	// Standard Foreground Colors
-	black   = "\033[30m"
-	red     = "\033[31m"
-	green   = "\033[32m"
-	yellow  = "\033[33m"
-	blue    = "\033[34m"
-	magenta = "\033[35m"
-	cyan    = "\033[36m"
-	white   = "\033[37m"
+	black     = "\033[30m"
+	red       = "\033[31m"
+	limeGreen = "\033[38;2;85;255;85m"
+	green     = "\033[32m"
+	yellow    = "\033[33m"
+	blue      = "\033[34m"
+	magenta   = "\033[35m"
+	cyan      = "\033[36m"
+	white     = "\033[37m"
 
 	dimYellow = "\033[38;5;136m" // Warm dark yellow / mustard
 	darkGold  = "\033[38;5;142m" // Slightly lighter olive-yellow
@@ -98,5 +100,17 @@ func colorize(code, s string) string {
 // just asks for the effect it wants ("show a success message"),
 // without needing to know it's implemented with escape codes at all.
 func PrintSuccess(msg string) {
+	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
 	fmt.Println(colorize(green, "✔ "+msg))
+	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+}
+
+// PrintError prints a short red failure message — the same idea as
+// PrintSuccess, just the other outcome. Written to os.Stderr rather
+// than os.Stdout, which is the conventional place for error output:
+// it means a script piping this program's stdout elsewhere (e.g. into
+// a file or another command) never sees error text mixed into its
+// data by accident.
+func PrintError(msg string) {
+	fmt.Fprintln(os.Stderr, colorize(red, "✘ "+msg))
 }

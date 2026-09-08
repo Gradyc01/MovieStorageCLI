@@ -41,8 +41,8 @@ func PrintMovies(movies []*movie.Movie, selectedIndex int) {
 	var buf bytes.Buffer
 	w := tabwriter.NewWriter(&buf, 0, 4, 2, ' ', 0)
 
-	fmt.Fprintln(w, "ID\tTITLE\tDIRECTOR\tFRANCHISE\tRELEASE DATE\tRATING")
-	fmt.Fprintln(w, "--\t-----\t--------\t---------\t------------\t------")
+	fmt.Fprintln(w, "IMDB ID\tTITLE\tDIRECTOR/CREATOR\tFRANCHISE\tRELEASE DATE\tRATING")
+	fmt.Fprintln(w, "-------\t-----\t----------------\t---------\t------------\t------")
 
 	for _, m := range movies {
 		// The RATING/WATCHED column IS colored here, pre-Flush, and
@@ -52,10 +52,10 @@ func PrintMovies(movies []*movie.Movie, selectedIndex int) {
 		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
 			m.ImdbID,
 			m.Title,
+			ratingCell(m),
 			m.DirectorsDisplay(),
 			orDash(m.Franchise),
 			orDash(m.ReleaseDate),
-			ratingCell(m),
 		)
 	}
 
@@ -98,8 +98,10 @@ func ratingCell(m *movie.Movie) string {
 	case m.Rating < 0:
 		return colorize(dim, text)
 	case m.Rating >= 10:
-		return colorize(green, colorize(bold, text))
-	case m.Rating >= 8:
+		return colorize(limeGreen, colorize(bold, text))
+	case m.Rating >= 9:
+		return colorize(limeGreen, text)
+	case m.Rating >= 7:
 		return colorize(green, text)
 	case m.Rating >= 5:
 		return colorize(yellow, text)
@@ -127,7 +129,7 @@ func orDash(s string) string {
 func PrintPageFooter(currentPage, totalPages int, interactive bool) {
 	pageInfo := colorize(bold, fmt.Sprintf("Page %d of %d", currentPage+1, totalPages))
 	if interactive {
-		hint := colorize(dim, "→/n: next page, ←/p: previous page, q/Enter: quit")
+		hint := colorize(dim, "→/n: next page, ←/p: previous page, ↑: move up on page, ↓ move down on page, q/Enter: quit")
 		fmt.Printf("%s  —  %s\n", pageInfo, hint)
 		return
 	}

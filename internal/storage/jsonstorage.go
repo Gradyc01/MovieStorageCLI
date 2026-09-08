@@ -11,7 +11,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
+	"time"
 
 	"movie-tracker/internal/movie"
 )
@@ -155,20 +157,129 @@ func (s *JSONStorage) List() ([]*movie.Movie, error) {
 // Search does a simple case-insensitive substring match on the title.
 // Nothing fancy — this is a placeholder you can upgrade later (fuzzy
 // matching, searching by director/franchise too, etc.).
+// DIRECTOR contains equals
+// TITLE    contains equals
+// YEAR     > < ==
+// RELEASE  > <
+// RATING   > < ==
+// WATCHED  ==
+// FRANCHISE contains equals
+// Example Query: TITLE contains Guardians of, RATING < 9
 func (s *JSONStorage) Search(query string) ([]*movie.Movie, error) {
 	movies, err := s.load()
 	if err != nil {
 		return nil, err
 	}
 
-	query = strings.ToLower(query)
+	queries := strings.Split(query, ", ")
+
+	//query = strings.ToLower(query)
 	var results []*movie.Movie
+
 	for _, m := range movies {
-		if strings.Contains(strings.ToLower(m.Title), query) {
+		validMovie := true
+		for _, q := range queries {
+			splitQuery := strings.Split(q, " ")
+			if len(splitQuery) < 2 {
+				return nil, fmt.Errorf("invalid query: %s", query)
+			}
+			parameter := strings.ToUpper(splitQuery[0])
+			comparator := splitQuery[1]
+			value := strings.Join(splitQuery[2:], " ")
+
+			if !evaluate(parameter, comparator, value, m) {
+				validMovie = false
+				break
+			}
+		}
+		if validMovie {
 			results = append(results, m)
 		}
 	}
+
 	return results, nil
+}
+
+func evaluate(parameter string, comparator string, targetValue string, movie *movie.Movie) bool {
+	switch parameter {
+	case "DIRECTOR":
+		{
+			for _, director := range movie.Directors {
+				if stringComparator(targetValue, director, comparator) {
+					return true
+				}
+			}
+			return false
+		}
+	case "TITLE":
+		return stringComparator(targetValue, movie.Title, comparator)
+	case "FRANCHISE":
+		return stringComparator(targetValue, movie.Franchise, comparator)
+	case "YEAR":
+		return numberComparator(targetValue, float64(movie.Year), comparator)
+	case "RATING":
+		return numberComparator(targetValue, movie.Rating, comparator)
+	case "RELEASE":
+		return dateComparator(targetValue, movie.ReleaseDate, comparator)
+	case "WATCHED":
+		switch targetValue {
+		case "true":
+			return movie.Watched
+		case "false":
+			return !movie.Watched
+		default:
+			return false
+		}
+	default:
+		return false
+	}
+}
+
+func dateComparator(targetValue string, actualValue string, comparator string) bool {
+	targetDate, err := time.Parse("2006-01-02", targetValue)
+	actualDate, err2 := time.Parse("2006-01-02", actualValue)
+	if err != nil || err2 != nil {
+		return false
+	}
+
+	switch comparator {
+	case "<":
+		return targetDate.After(actualDate)
+	case ">":
+		return targetDate.Before(actualDate)
+	case "==":
+		return targetDate.Equal(actualDate)
+	default:
+		return false
+	}
+}
+
+func numberComparator(targetValue string, actualValue float64, comparator string) bool {
+	target, err := strconv.ParseFloat(targetValue, 64)
+	if err != nil {
+		return false
+	}
+	switch comparator {
+	case ">":
+		return actualValue > target
+	case "<":
+		return actualValue < target
+	case "==":
+		return actualValue == target
+	default:
+		return false
+	}
+}
+
+func stringComparator(targetValue string, actualValue string, comparator string) bool {
+	switch comparator {
+	case "contains":
+		return strings.Contains(strings.ToLower(actualValue), strings.ToLower(targetValue))
+	case "equals":
+		return strings.EqualFold(strings.ToLower(targetValue), strings.ToLower(actualValue))
+	default:
+		return false
+	}
 }
 
 // GetByID returns the single movie matching id, or an error if none
@@ -189,4 +300,26 @@ func (s *JSONStorage) GetByID(id string) (*movie.Movie, error) {
 	}
 
 	return nil, fmt.Errorf("no movie found with id %q", id)
+}
+
+// Update replaces the stored movie with the same ID as updated,
+// then persists the whole collection back to disk. Since our "storage
+// engine" is really just read-everything/write-everything (see the
+// package doc at the top of json_storage.go), an update is really a
+// find-in-memory-then-save-everything operation — there's no partial
+// write of a single record the way an actual database could do.
+func (s *JSONStorage) Update(updated *movie.Movie) error {
+	movies, err := s.load()
+	if err != nil {
+		return err
+	}
+
+	for i, m := range movies {
+		if m.ID == updated.ID {
+			movies[i] = updated
+			return s.save(movies)
+		}
+	}
+
+	return fmt.Errorf("no movie found with id %q", updated.ID)
 }

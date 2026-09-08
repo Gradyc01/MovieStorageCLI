@@ -44,4 +44,11 @@ type Storage interface {
 	// if none exists. This backs both the standalone `get` command and
 	// arrow-key selection inside `list`.
 	GetByID(id string) (*movie.Movie, error)
+
+	// Update persists changes to an existing movie, matched by its ID.
+	// GetByID hands back a pointer into memory that's discarded the
+	// moment that call returns — mutating fields on it does nothing
+	// durable by itself. Update is what actually writes those changes
+	// back to storage.
+	Update(m *movie.Movie) error
 }

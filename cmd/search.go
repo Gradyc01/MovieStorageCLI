@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -10,13 +11,20 @@ import (
 var searchCmd = &cobra.Command{
 	Use:   "search <query>",
 	Short: "Search tracked movies by title",
-	Args:  cobra.ExactArgs(1),
 	RunE: func(command *cobra.Command, args []string) error {
-		query := args[0]
+		query := strings.Join(args, " ")
 
 		results, err := store.Search(query)
 		if err != nil {
-			return fmt.Errorf("could not search movies: %w", err)
+			return fmt.Errorf("could not search movies: %w \n Here is the proper syntax for a search "+
+				"\n DIRECTOR contains equals "+
+				"\n TITLE    contains equals"+
+				"\n YEAR     > < =="+
+				"\n RELEASE  > <"+
+				"\n RATING   > < =="+
+				"\n WATCHED  =="+
+				"\n FRANCHISE contains equals "+
+				"\n Example Query: TITLE contains Guardians of, RATING < 9 ", err)
 		}
 
 		if len(results) == 0 {
@@ -24,8 +32,10 @@ var searchCmd = &cobra.Command{
 			return nil
 		}
 
-		for _, m := range results {
-			fmt.Printf("[%s] %s\n", m.ID, m)
+		//display.PrintMovies(results, 0)
+		err = paginate(results)
+		if err != nil {
+			return err
 		}
 		return nil
 	},
