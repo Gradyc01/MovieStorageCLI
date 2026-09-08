@@ -9,6 +9,7 @@ package cmd
 import (
 	"bufio"
 	"fmt"
+	"movie-tracker/internal/display"
 	"os"
 	"strings"
 
@@ -18,8 +19,8 @@ import (
 
 // RunInteractive is the REPL loop itself.
 func RunInteractive() {
-	fmt.Println("movie-tracker interactive mode. Type a command (add, list, remove, search, help) or 'exit' to quit.")
-
+	//fmt.Println("movie-tracker interactive mode. Type a command (add, list, remove, search, help) or 'exit' to quit.")
+	display.PrintInitialWelcomeMessage()
 	// bufio.Scanner reads stdin line by line. This is roughly the Go
 	// equivalent of wrapping System.in in a BufferedReader and calling
 	// readLine() in a loop in Java.

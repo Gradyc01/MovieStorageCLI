@@ -56,9 +56,7 @@ func PrintMovieDetail(m *movie.Movie) {
 
 	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
 	for i, line := range lines {
-		// Recolor just the Status line's value based on watched/rating
-		// state, matching the coloring used in the list table.
-		if fields[i].label == "Status" {
+		if fields[i].label == "Rating" {
 			line = recolorStatusLine(line, m)
 		}
 		fmt.Println(line)

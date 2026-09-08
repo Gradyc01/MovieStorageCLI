@@ -41,10 +41,6 @@ var listCmd = &cobra.Command{
 	},
 }
 
-func CallListCmd(movies []*movie.Movie) error {
-	return paginate(movies)
-}
-
 func init() {
 	rootCmd.AddCommand(listCmd)
 }

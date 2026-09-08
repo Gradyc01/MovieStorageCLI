@@ -6,11 +6,10 @@
 package display
 
 import (
-	"bytes"
 	"fmt"
 	"movie-tracker/internal/movie"
 	"strings"
-	"text/tabwriter"
+	"unicode/utf8"
 )
 
 // separatorWidth controls how long the decorative "====" lines are.
@@ -18,80 +17,167 @@ import (
 // terminal width via term.GetSize if you want it to be responsive.
 const separatorWidth = 100
 
+// columnGap is the number of spaces inserted between columns, mirroring
+// the "4, 2" (minwidth, padding) tabwriter setup we used to have.
+const columnGap = 2
+
+// column describes one field of the table. get() must return PLAIN
+// text (no ANSI codes) — that's what column widths are computed
+// from. color(), if non-nil, is applied AFTER the plain text has
+// already been padded to the column's width, so it's free to color
+// any column, not just the last one.
+type column struct {
+	header string
+	get    func(m *movie.Movie) string
+	color  func(m *movie.Movie, padded string) string
+}
+
+func movieColumns() []column {
+	return []column{
+		{
+			header: "IMDB ID",
+			get:    func(m *movie.Movie) string { return m.ImdbID },
+			color:  func(m *movie.Movie, s string) string { return colorize(dim, s) },
+		},
+		{
+			header: "TITLE",
+			get:    func(m *movie.Movie) string { return m.Title },
+			color:  func(m *movie.Movie, s string) string { return colorize(white, s) },
+		},
+		{
+			header: "DIRECTOR/CREATOR",
+			get:    func(m *movie.Movie) string { return m.DirectorsDisplay() },
+		},
+		{
+			header: "FRANCHISE",
+			get:    func(m *movie.Movie) string { return orDash(m.Franchise) },
+			color: func(m *movie.Movie, s string) string {
+				if !strings.Contains(s, "—") {
+					return colorize(darkOlive, s)
+				}
+				return colorize(dim, s)
+			},
+		},
+		{header: "RELEASE DATE", get: func(m *movie.Movie) string { return orDash(m.ReleaseDate) }},
+		{
+			header: "RATING",
+			get:    func(m *movie.Movie) string { return m.RatingOrWatched() },
+			color:  func(m *movie.Movie, padded string) string { return colorizeRating(m, padded) },
+		},
+	}
+}
+
 func PrintMovies(movies []*movie.Movie, selectedIndex int) {
 	if len(movies) == 0 {
 		fmt.Println("No movies to display.")
 		return
 	}
 
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+	cols := movieColumns()
 
-	// IMPORTANT: we write to an in-memory buffer here, NOT directly to
-	// os.Stdout. This is the key fix for a subtle bug: tabwriter counts
-	// every byte in a cell — including invisible ANSI color codes — when
-	// deciding how much padding a cell needs. If we colored the header
-	// line before handing it to tabwriter, the color codes would eat
-	// into that cell's "padding budget" without contributing any actual
-	// visible width, causing tabwriter to under-pad it relative to
-	// uncolored data rows. The fix: give tabwriter only PLAIN text,
-	// let it finish computing alignment and produce fully-padded
-	// output, and only THEN wrap complete, already-aligned lines in
-	// color — at that point they're just finished strings, so adding
-	// invisible bytes to their very start/end can't disturb anything.
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 4, 2, ' ', 0)
-
-	fmt.Fprintln(w, "IMDB ID\tTITLE\tDIRECTOR/CREATOR\tFRANCHISE\tRELEASE DATE\tRATING")
-	fmt.Fprintln(w, "-------\t-----\t----------------\t---------\t------------\t------")
-
-	for _, m := range movies {
-		// The RATING/WATCHED column IS colored here, pre-Flush, and
-		// that's fine — tabwriter explicitly excludes the LAST cell
-		// of each line from alignment (there's nothing after it to
-		// align with), so invisible bytes there never affect padding.
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\t%s\t%s\n",
-			m.ImdbID,
-			m.Title,
-			ratingCell(m),
-			m.DirectorsDisplay(),
-			orDash(m.Franchise),
-			orDash(m.ReleaseDate),
-		)
+	// Pre-compute every cell's PLAIN text once. We need it twice (once
+	// to measure widths, once to render), and get() may not be cheap
+	// (e.g. DirectorsDisplay joins a slice).
+	plain := make([][]string, len(movies))
+	for i, m := range movies {
+		row := make([]string, len(cols))
+		for c, col := range cols {
+			row[c] = col.get(m)
+		}
+		plain[i] = row
 	}
 
-	// Flush computes column widths from the plain text above and
-	// writes the fully-padded result into buf.
-	w.Flush()
-
-	// Now split the finished, correctly-aligned output back into
-	// lines so we can color the header/underline, and append a small
-	// arrow marker to the selected row. Appending text here — AFTER
-	// Flush — is safe regardless of length, since tabwriter is done
-	// computing widths; we're just gluing extra characters onto the
-	// end of an already-finished line, which can't retroactively
-	// change anything about how it was padded.
-	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
-	for i, line := range lines {
-		switch {
-		case i == 0:
-			fmt.Println(colorize(bold+cyan, line))
-		case i == 1:
-			fmt.Println(colorize(dim, line))
-		case i-2 == selectedIndex:
-			fmt.Println(line + colorize(bold+cyan, "  ←"))
-		default:
-			fmt.Println(line)
+	// Column width = widest PLAIN cell in that column (header included).
+	// This is the whole fix: widths never see a color code, so no
+	// column's padding can be thrown off by however many columns we
+	// decide to color.
+	widths := make([]int, len(cols))
+	for c, col := range cols {
+		widths[c] = utf8.RuneCountInString(col.header)
+	}
+	for _, row := range plain {
+		for c, cell := range row {
+			if w := utf8.RuneCountInString(cell); w > widths[c] {
+				widths[c] = w
+			}
 		}
+	}
+
+	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+
+	headerLine := buildPlainRow(headersOf(cols), widths)
+	fmt.Println(colorize(bold+cyan, headerLine))
+
+	underlineCells := make([]string, len(cols))
+	for c, col := range cols {
+		underlineCells[c] = strings.Repeat("-", utf8.RuneCountInString(col.header))
+	}
+	fmt.Println(colorize(dim, buildPlainRow(underlineCells, widths)))
+
+	for i, m := range movies {
+		var b strings.Builder
+		for c, col := range cols {
+			padded := padRight(plain[i][c], widths[c])
+			cell := padded
+			if col.color != nil {
+				// Coloring happens AFTER padding, so the padding
+				// spaces ride along inside the color codes. That's
+				// harmless — a space has no visible foreground — and
+				// it means color never touches the width math above.
+				cell = col.color(m, padded)
+			}
+			b.WriteString(cell)
+			if c != len(cols)-1 {
+				b.WriteString(strings.Repeat(" ", columnGap))
+			}
+		}
+		line := strings.TrimRight(b.String(), " ")
+		if i == selectedIndex {
+			line += colorize(bold+cyan, "  ←")
+		}
+		fmt.Println(line)
 	}
 
 	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
 }
 
-// ratingCell colors the RATING/WATCHED column based on the movie's
-// state: yellow if it hasn't been watched yet, dim if it's been
-// watched but never rated, green if it has an actual rating.
-func ratingCell(m *movie.Movie) string {
-	text := m.RatingOrWatched()
+// buildPlainRow pads a row of plain strings to the given widths and
+// joins them with columnGap spaces — used for the header and
+// underline rows, which get colored as a whole line rather than
+// per-cell.
+func buildPlainRow(cells []string, widths []int) string {
+	parts := make([]string, len(cells))
+	for i, cell := range cells {
+		parts[i] = padRight(cell, widths[i])
+	}
+	return strings.TrimRight(strings.Join(parts, strings.Repeat(" ", columnGap)), " ")
+}
+
+func headersOf(cols []column) []string {
+	out := make([]string, len(cols))
+	for i, c := range cols {
+		out[i] = c.header
+	}
+	return out
+}
+
+// padRight right-pads s with spaces up to width, measured in runes
+// (not bytes), so it stays correct for non-ASCII director/title names.
+func padRight(s string, width int) string {
+	n := utf8.RuneCountInString(s)
+	if n >= width {
+		return s
+	}
+	return s + strings.Repeat(" ", width-n)
+}
+
+// applyRatingColor holds the actual rating->color decision, decoupled
+// from whatever text it's given. Both the table (which needs to color
+// an already width-padded cell) and detail.go (which needs to color
+// the bare, unpadded value via ratingCell) share this single switch
+// so the two views can never drift out of sync on what counts as a
+// "good" vs "bad" rating.
+func applyRatingColor(m *movie.Movie, text string) string {
 	switch {
 	case !m.Watched:
 		return colorize(dimYellow, text)
@@ -108,6 +194,19 @@ func ratingCell(m *movie.Movie) string {
 	default:
 		return colorize(red, text)
 	}
+}
+
+// colorizeRating colors an already width-padded RATING cell for the
+// list table.
+func colorizeRating(m *movie.Movie, padded string) string {
+	return applyRatingColor(m, padded)
+}
+
+// ratingCell colors the bare (unpadded) rating value. Kept as its own
+// function — rather than inlined at call sites — because detail.go's
+// PrintMovieDetail calls it directly to recolor its "Rating:" line.
+func ratingCell(m *movie.Movie) string {
+	return applyRatingColor(m, m.RatingOrWatched())
 }
 
 // orDash returns the string unchanged, or an em-dash placeholder if
