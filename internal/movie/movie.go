@@ -26,16 +26,26 @@ var slugRegexp = regexp.MustCompile(`[^a-z0-9-]`)
 // this field when converting to/from JSON. Think of it like Jackson's
 // @JsonProperty annotation in Java, but built into the language.
 type Movie struct {
-	ID          string    `json:"id"`
-	Title       string    `json:"title"`
-	Year        int       `json:"year"`
-	ReleaseDate string    `json:"release_date"` //Has default value of ""
-	Watched     bool      `json:"watched"`      //Has default value of false
-	Rating      float64   `json:"rating"`       //Has default value of -1
-	Franchise   string    `json:"franchise"`    //Has default value of ""
-	Directors   []string  `json:"director"`     //Has default value of ""
-	ImdbID      string    `json:"imdb_id"`      //Has default value of ""
-	AddedAt     time.Time `json:"added_at"`
+	Version             int       `json:"version"`
+	ID                  string    `json:"id"`
+	Title               string    `json:"title"`
+	Year                int       `json:"year"`
+	ReleaseDate         string    `json:"release_date"` //Has default value of ""
+	Watched             bool      `json:"watched"`      //Has default value of false
+	Rating              float64   `json:"rating"`       //Has default value of -1
+	Directors           []string  `json:"director"`     //Has default value of ""
+	ImdbID              string    `json:"imdb_id"`      //Has default value of ""
+	AddedAt             time.Time `json:"added_at"`
+	Status              string    `json:"status"` //Can be of value watched, unwatched, unrated, shortlist
+	Genres              []string  `json:"genres"`
+	FilmType            string    `json:"film_type"` //Can be of value TV or Movie
+	Tags                []string  `json:"tags"`
+	ProductionCompanies []string  `json:"production_companies"`
+	ProductionCountries []string  `json:"production_countries"`
+	SpokenLanguages     []string  `json:"spoken_languages"`
+	KnownActors         []string  `json:"known_actors"`
+	TmdbID              string    `json:"tmdb_id"`
+	Notes               string    `json:"notes"`
 }
 
 // NewMovie is our "constructor". Go doesn't have constructors as a
@@ -43,20 +53,35 @@ type Movie struct {
 // ready-to-use Movie. Returning a pointer (*Movie) means callers get
 // a reference to one shared instance, similar to how Java objects
 // are always references under the hood.
-func NewMovie(title string, releaseDate string, franchise string, directors []string, imdbID string, rating float64) *Movie {
+func NewMovie(title string, releaseDate string, directors []string, imdbID string, tmdbID string, genres []string, filmType string, rating float64, tags []string,
+	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string) *Movie {
 	year := getReleaseYear(releaseDate)
 	watched := rating != -1
+	status := "unwatched"
+	if rating != -1 {
+		status = "watched"
+	}
 	return &Movie{
-		ID:          generateID(title, year),
-		Title:       title,
-		Year:        year,
-		ReleaseDate: releaseDate,
-		Watched:     watched,
-		Rating:      rating,
-		Franchise:   franchise,
-		Directors:   directors,
-		ImdbID:      imdbID,
-		AddedAt:     time.Now(),
+		Version:             1,
+		ID:                  generateID(title, year),
+		Title:               title,
+		Year:                year,
+		ReleaseDate:         releaseDate,
+		Watched:             watched,
+		Rating:              rating,
+		Directors:           directors,
+		ImdbID:              imdbID,
+		AddedAt:             time.Now(),
+		Status:              status,
+		Genres:              genres,
+		FilmType:            filmType,
+		Tags:                tags,
+		ProductionCompanies: prodCompanies,
+		ProductionCountries: prodCountries,
+		SpokenLanguages:     languages,
+		KnownActors:         actors,
+		TmdbID:              tmdbID,
+		Notes:               notes,
 	}
 }
 
@@ -72,12 +97,34 @@ func NewMovieViaImdbLink(imdbLink string, rating float64) (*Movie, error) {
 		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
 	}
 
+	tmdbID := result.MovieResults[0].ID
+
+	credits, err := client.GetMovieCredits(tmdbID)
+	if err != nil {
+		fmt.Printf("error getting movie credits: %v\n", err)
+	}
+
 	if len(result.MovieResults) > 0 {
-		movie, err := client.GetMovie(result.MovieResults[0].ID)
+		movie, err := client.GetMovie(tmdbID)
 		if err != nil {
 			return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
 		}
-		return NewMovie(movie.Title, movie.ReleaseDate, findFranchise(movie.BelongsToCollection), findDirector(client, result.MovieResults[0].ID), imdbID, rating), nil
+		return NewMovie(
+			movie.Title,
+			movie.ReleaseDate,
+			findDirector(credits),
+			imdbID,
+			strconv.Itoa(tmdbID),
+			findGenres(movie.Genres),
+			"movie",
+			rating,
+			findFranchise(movie.BelongsToCollection),
+			findProductionCompanies(movie.ProductionCompanies),
+			findProductionCountries(movie.ProductionCountries),
+			findSpokenLanguages(movie.SpokenLanguages),
+			findKnownActors(credits),
+			"",
+		), nil
 	}
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
@@ -91,11 +138,18 @@ func NewShowViaImdbLink(imdbLink string, seasonNumber int, rating float64) (*Mov
 	}
 	result, err := client.FindByIMDbID(imdbID)
 	if err != nil {
-		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+		return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
+	}
+
+	tmdbID := result.TVResults[0].ID
+
+	credits, err := client.GetTVCredits(tmdbID)
+	if err != nil {
+		fmt.Printf("error getting tv credits: %v\n", err)
 	}
 
 	if len(result.TVResults) > 0 {
-		tv, err := client.GetTVShow(result.TVResults[0].ID)
+		tv, err := client.GetTVShow(tmdbID)
 		if err != nil {
 			return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
 		}
@@ -105,7 +159,22 @@ func NewShowViaImdbLink(imdbLink string, seasonNumber int, rating float64) (*Mov
 			return nil, err
 		}
 
-		return NewMovie(tv.Name+" "+season.Name, season.AirDate, findFranchise(tv.BelongsToCollection), findCreators(tv.CreatedBy), imdbID, rating), nil
+		return NewMovie(
+				tv.Name+" "+season.Name,
+				season.AirDate,
+				findCreators(tv.CreatedBy),
+				imdbID,
+				strconv.Itoa(tmdbID),
+				findGenres(tv.Genres),
+				"tv",
+				rating,
+				findFranchise(tv.BelongsToCollection),
+				findProductionCompanies(tv.ProductionCompanies),
+				findProductionCountries(tv.ProductionCountries),
+				findSpokenLanguages(tv.SpokenLanguages),
+				findKnownActors(credits),
+				""),
+			nil
 	}
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
@@ -138,26 +207,64 @@ func getReleaseYear(releaseDate string) int {
 	return int(year)
 }
 
-func findFranchise(collection *api.Collection) string {
-	if collection != nil {
-		return collection.Name
+func findProductionCompanies(companies []api.ProductionCompany) []string {
+	var companiesList []string
+	for _, company := range companies {
+		companiesList = append(companiesList, company.Name)
 	}
-	return ""
+	return companiesList
 }
 
-func findDirector(client *api.Client, tmdbID int) []string {
-	result, err := client.GetMovieCredits(tmdbID)
-	if err != nil {
-		fmt.Printf("error getting movie credits: %v\n", err)
+func findProductionCountries(countries []api.ProductionCountry) []string {
+	var countryList []string
+	for _, country := range countries {
+		countryList = append(countryList, country.Name)
 	}
+	return countryList
+}
 
+func findSpokenLanguages(languages []api.SpokenLanguage) []string {
+	var languageList []string
+	for _, language := range languages {
+		languageList = append(languageList, language.EnglishName)
+	}
+	return languageList
+}
+
+func findFranchise(collection *api.Collection) []string {
+	var franchises []string
+	if collection != nil {
+		franchises = append(franchises, collection.Name)
+	}
+	return franchises
+}
+
+func findGenres(genres []api.Genres) []string {
+	var genreList []string
+	for _, genre := range genres {
+		genreList = append(genreList, genre.Name)
+	}
+	return genreList
+}
+
+func findDirector(credits *api.Credits) []string {
 	var directors []string
-	for _, crew := range result.Crew {
+	for _, crew := range credits.Crew {
 		if crew.Job == "Director" {
 			directors = append(directors, crew.Name)
 		}
 	}
 	return directors
+}
+
+func findKnownActors(credits *api.Credits) []string {
+	var actors []string
+	for _, actor := range credits.Cast {
+		if actor.Popularity > 1.0 {
+			actors = append(actors, actor.Name)
+		}
+	}
+	return actors
 }
 
 func findCreators(people []api.Person) []string {
@@ -202,16 +309,16 @@ func (m *Movie) MarkWatched() {
 	m.Watched = true
 }
 
-// DirectorsDisplay joins the Directors slice into a single
+// ListDisplay joins the Directors slice into a single
 // comma-separated string, or a placeholder if none are set. Small
 // formatting helpers like this are common in Go — since there's no
 // method overloading, it's normal to add a purpose-named method
 // rather than trying to cram every case into String().
-func (m *Movie) DirectorsDisplay() string {
-	if len(m.Directors) == 0 {
+func (m *Movie) ListDisplay(list []string) string {
+	if len(list) == 0 {
 		return "—"
 	}
-	return strings.Join(m.Directors, ", ")
+	return strings.Join(list, ", ")
 }
 
 // RatingOrWatched implements the combined column your list view wants:

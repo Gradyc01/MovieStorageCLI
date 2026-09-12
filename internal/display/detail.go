@@ -35,8 +35,8 @@ func PrintMovieDetail(m *movie.Movie) {
 		{"Title", m.Title},
 		{"Release Date", m.ReleaseDate},
 		{"Rating", m.RatingOrWatched()},
-		{"Franchise", orDash(m.Franchise)},
-		{"Directors", m.DirectorsDisplay()},
+		{"Tags", m.ListDisplay(m.Tags)},
+		{"Directors", m.ListDisplay(m.Directors)},
 		{"IMDB-ID", m.ImdbID},
 	}
 

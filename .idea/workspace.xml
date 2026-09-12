@@ -5,12 +5,16 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7125f58c-51bb-4650-bbca-613b6bc92b21" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/internal/github/github.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/repl.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/repl.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/argparse.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/argparse.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/search.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/search.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/update.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/update.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/environment.properties" beforeDir="false" afterPath="$PROJECT_DIR$/environment.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/api/tmdb.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/api/tmdb.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/display/detail.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/detail.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/display/table.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/table.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/movie/movie.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/movie/movie.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/storage/jsonstorage.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/jsonstorage.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

@@ -46,11 +46,11 @@ func movieColumns() []column {
 		},
 		{
 			header: "DIRECTOR/CREATOR",
-			get:    func(m *movie.Movie) string { return m.DirectorsDisplay() },
+			get:    func(m *movie.Movie) string { return m.ListDisplay(m.Directors) },
 		},
 		{
-			header: "FRANCHISE",
-			get:    func(m *movie.Movie) string { return orDash(m.Franchise) },
+			header: "TAGS",
+			get:    func(m *movie.Movie) string { return m.ListDisplay(m.Tags) },
 			color: func(m *movie.Movie, s string) string {
 				if !strings.Contains(s, "—") {
 					return colorize(darkOlive, s)

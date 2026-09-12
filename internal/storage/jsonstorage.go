@@ -163,7 +163,7 @@ func (s *JSONStorage) List() ([]*movie.Movie, error) {
 // RELEASE  > <
 // RATING   > < ==
 // WATCHED  ==
-// FRANCHISE contains equals
+// TAGS contains equals
 // Example Query: TITLE contains Guardians of, RATING < 9
 func (s *JSONStorage) Search(query string) ([]*movie.Movie, error) {
 	movies, err := s.load()
@@ -213,8 +213,8 @@ func evaluate(parameter string, comparator string, targetValue string, movie *mo
 		}
 	case "TITLE":
 		return stringComparator(targetValue, movie.Title, comparator)
-	case "FRANCHISE":
-		return stringComparator(targetValue, movie.Franchise, comparator)
+	case "TAGS":
+		return arrayStringComparator(targetValue, movie.Tags, comparator)
 	case "YEAR":
 		return numberComparator(targetValue, float64(movie.Year), comparator)
 	case "RATING":
@@ -233,6 +233,15 @@ func evaluate(parameter string, comparator string, targetValue string, movie *mo
 	default:
 		return false
 	}
+}
+
+func arrayStringComparator(targetValue string, actualValues []string, comparator string) bool {
+	for _, actualValue := range actualValues {
+		if stringComparator(targetValue, actualValue, comparator) {
+			return true
+		}
+	}
+	return false
 }
 
 func dateComparator(targetValue string, actualValue string, comparator string) bool {

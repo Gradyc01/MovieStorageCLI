@@ -13,7 +13,7 @@ import (
 var (
 	updateRating    float64
 	updateDirectors string
-	updateFranchise string
+	updateTags      string
 	updateTitle     string
 )
 
@@ -54,8 +54,8 @@ var updateCmd = &cobra.Command{
 			changedAnything = true
 		}
 
-		if command.Flags().Changed("updateFranchise") {
-			m.Franchise = updateFranchise
+		if command.Flags().Changed("updateTags") {
+			m.Tags = splitAndTrim(updateTags, ",")
 			changedAnything = true
 		}
 
@@ -65,7 +65,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		if !changedAnything {
-			fmt.Println("No fields provided. Use --updateRating, --updateDirectors, --updateFranchise, or --updateTitle.")
+			fmt.Println("No fields provided. Use --updateRating, --updateDirectors, --updateTags, or --updateTitle.")
 			return nil
 		}
 
@@ -89,14 +89,17 @@ func applyScore(m *movie.Movie, score float64) error {
 	switch {
 	case score == -1:
 		m.Watched = false
+		m.Status = "unwatched"
 		m.Rating = -1
 	case score == -2:
 		m.Watched = true
+		m.Status = "unrated"
 		m.Rating = -1
 	case score < 0 || score > 10:
 		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)", score)
 	default:
 		m.Watched = true
+		m.Status = "watched"
 		m.Rating = score
 	}
 	return nil
@@ -121,7 +124,7 @@ func splitAndTrim(s, sep string) []string {
 func init() {
 	updateCmd.Flags().Float64Var(&updateRating, "updateRating", -1, "Give this movie a rating from 0.0 - 10.0. Use score -1 for unwatched and -2 for Unrated")
 	updateCmd.Flags().StringVar(&updateDirectors, "updateDirectors", "", "Update the directors of this movie. Connect the directors using a ','. Ex: \"David Leitch, Chad Stahelski\"")
-	updateCmd.Flags().StringVar(&updateFranchise, "updateFranchise", "", "Update what franchise this movie belongs in.")
+	updateCmd.Flags().StringVar(&updateTags, "updateTags", "", "Update what franchise this movie belongs in.")
 	updateCmd.Flags().StringVar(&updateTitle, "updateTitle", "", "Update what the movie title.")
 
 	rootCmd.AddCommand(updateCmd)

@@ -23,7 +23,7 @@ var searchCmd = &cobra.Command{
 				"\n RELEASE  > <"+
 				"\n RATING   > < =="+
 				"\n WATCHED  =="+
-				"\n FRANCHISE contains equals "+
+				"\n TAGS contains equals "+
 				"\n Example Query: TITLE contains Guardians of, RATING < 9 ", err)
 		}
 

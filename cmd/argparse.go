@@ -9,7 +9,7 @@ import "strings"
 // this list (like --updateScore, a number) don't need this treatment.
 var multiWordFlags = map[string]bool{
 	"--updateTitle":     true,
-	"--updateFranchise": true,
+	"--updateTags":      true,
 	"--updateDirectors": true,
 }
 

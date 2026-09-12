@@ -131,41 +131,49 @@ type Collection struct {
 
 // Movie represents a subset of fields returned for movie results/details.
 type Movie struct {
-	ID                  int         `json:"id"`
-	Title               string      `json:"title"`
-	OriginalTitle       string      `json:"original_title"`
-	Overview            string      `json:"overview"`
-	ReleaseDate         string      `json:"release_date"`
-	PosterPath          string      `json:"poster_path"`
-	BackdropPath        string      `json:"backdrop_path"`
-	VoteAverage         float64     `json:"vote_average"`
-	VoteCount           int         `json:"vote_count"`
-	Popularity          float64     `json:"popularity"`
-	Adult               bool        `json:"adult"`
-	GenreIDs            []int       `json:"genre_ids,omitempty"`
-	Runtime             int         `json:"runtime,omitempty"`
-	Tagline             string      `json:"tagline,omitempty"`
-	Status              string      `json:"status,omitempty"`
-	OriginalLanguage    string      `json:"original_language"`
-	BelongsToCollection *Collection `json:"belongs_to_collection"`
+	ID                  int                 `json:"id"`
+	Title               string              `json:"title"`
+	OriginalTitle       string              `json:"original_title"`
+	Overview            string              `json:"overview"`
+	ReleaseDate         string              `json:"release_date"`
+	PosterPath          string              `json:"poster_path"`
+	BackdropPath        string              `json:"backdrop_path"`
+	VoteAverage         float64             `json:"vote_average"`
+	VoteCount           int                 `json:"vote_count"`
+	Popularity          float64             `json:"popularity"`
+	Adult               bool                `json:"adult"`
+	GenreIDs            []int               `json:"genre_ids,omitempty"`
+	Runtime             int                 `json:"runtime,omitempty"`
+	Tagline             string              `json:"tagline,omitempty"`
+	Status              string              `json:"status,omitempty"`
+	OriginalLanguage    string              `json:"original_language"`
+	BelongsToCollection *Collection         `json:"belongs_to_collection"`
+	ProductionCompanies []ProductionCompany `json:"production_companies"`
+	ProductionCountries []ProductionCountry `json:"production_countries"`
+	SpokenLanguages     []SpokenLanguage    `json:"spoken_languages"`
+	Genres              []Genres            `json:"genres"`
 }
 
 // TVShow represents a subset of fields returned for TV results/details.
 type TVShow struct {
-	ID                  int         `json:"id"`
-	Name                string      `json:"name"`
-	OriginalName        string      `json:"original_name"`
-	Overview            string      `json:"overview"`
-	FirstAirDate        string      `json:"first_air_date"`
-	PosterPath          string      `json:"poster_path"`
-	BackdropPath        string      `json:"backdrop_path"`
-	VoteAverage         float64     `json:"vote_average"`
-	VoteCount           int         `json:"vote_count"`
-	Popularity          float64     `json:"popularity"`
-	OriginalLanguage    string      `json:"original_language"`
-	BelongsToCollection *Collection `json:"belongs_to_collection"`
-	CreatedBy           []Person    `json:"created_by"`
-	Seasons             []Season    `json:"seasons"`
+	ID                  int                 `json:"id"`
+	Name                string              `json:"name"`
+	OriginalName        string              `json:"original_name"`
+	Overview            string              `json:"overview"`
+	FirstAirDate        string              `json:"first_air_date"`
+	PosterPath          string              `json:"poster_path"`
+	BackdropPath        string              `json:"backdrop_path"`
+	VoteAverage         float64             `json:"vote_average"`
+	VoteCount           int                 `json:"vote_count"`
+	Popularity          float64             `json:"popularity"`
+	OriginalLanguage    string              `json:"original_language"`
+	BelongsToCollection *Collection         `json:"belongs_to_collection"`
+	CreatedBy           []Person            `json:"created_by"`
+	Seasons             []Season            `json:"seasons"`
+	ProductionCompanies []ProductionCompany `json:"production_companies"`
+	ProductionCountries []ProductionCountry `json:"production_countries"`
+	SpokenLanguages     []SpokenLanguage    `json:"spoken_languages"`
+	Genres              []Genres            `json:"genres"`
 }
 
 // Credits represents a subset of fields returned for credits of TV or Movie.
@@ -173,6 +181,33 @@ type Credits struct {
 	ID   int      `json:"id"`
 	Cast []Person `json:"cast"`
 	Crew []Crew   `json:"crew"`
+}
+
+// ProductionCompany represents a struct representing a production company
+type ProductionCompany struct {
+	ID       int    `json:"id"`
+	LogoPath string `json:"logo_path"`
+	Name     string `json:"name"`
+	Country  string `json:"origin_country"`
+}
+
+// ProductionCountry represents a struct representing a production country
+type ProductionCountry struct {
+	ISO31661 string `json:"iso_3166_1"`
+	Name     string `json:"name"`
+}
+
+// SpokenLanguage represents a struct representing a spoken language
+type SpokenLanguage struct {
+	EnglishName string `json:"english_name"`
+	Name        string `json:"name"`
+	ISO6391     string `json:"iso_639_1"`
+}
+
+// Genres represents a struct representing a Genre
+type Genres struct {
+	ID   int    `json:"id"`
+	Name string `json:"name"`
 }
 
 // Person represents a subset of fields returned for people results/details.
@@ -350,6 +385,15 @@ func (c *Client) GetMovie(movieID int) (*Movie, error) {
 func (c *Client) GetMovieCredits(movieID int) (*Credits, error) {
 	var out Credits
 	if err := c.get(fmt.Sprintf("/movie/%d/credits", movieID), nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetTVCredits fetches full details for a single movie's credits by TMDB ID.
+func (c *Client) GetTVCredits(tvID int) (*Credits, error) {
+	var out Credits
+	if err := c.get(fmt.Sprintf("/tv/%d/credits", tvID), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
