@@ -8,10 +8,13 @@ package cmd
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"movie-tracker/internal/display"
+	"movie-tracker/internal/github"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -20,6 +23,12 @@ import (
 // RunInteractive is the REPL loop itself.
 func RunInteractive() {
 	//fmt.Println("movie-tracker interactive mode. Type a command (add, list, remove, search, help) or 'exit' to quit.")
+	githubStore, err := github.NewStore()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	pullListFromGithub(githubStore)
 	display.PrintInitialWelcomeMessage()
 	// bufio.Scanner reads stdin line by line. This is roughly the Go
 	// equivalent of wrapping System.in in a BufferedReader and calling
@@ -84,7 +93,33 @@ func RunInteractive() {
 		}
 	}
 
+	saveListToGithub(githubStore)
 	fmt.Println("Goodbye!")
+}
+
+func pullListFromGithub(githubStore *github.Store) {
+	fmt.Println("Pulling list from Github... please wait...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := githubStore.Load(ctx)
+	if err != nil {
+		fmt.Printf("error loading github store: %v\n", err)
+		return
+	}
+	fmt.Println("Success!!!")
+}
+
+func saveListToGithub(githubStore *github.Store) {
+	fmt.Println("Saving list to Github... please wait...")
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	err := githubStore.Save(ctx)
+	if err != nil {
+		fmt.Printf("error loading github store: %v\n  Changes were not saved to github :(", err)
+		return
+	}
+	fmt.Println("Success!!!")
 }
 
 // resetFlags walks a command and all its subcommands, resetting every

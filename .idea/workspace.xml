@@ -5,12 +5,12 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7125f58c-51bb-4650-bbca-613b6bc92b21" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/internal/github/github.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/list.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/list.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/repl.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/repl.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/environment.properties" beforeDir="false" afterPath="$PROJECT_DIR$/environment.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/display/detail.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/detail.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/display/table.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/table.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -56,6 +56,11 @@
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
 }</component>
+  <component name="RecentsManager">
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\internal\github" />
+    </key>
+  </component>
   <component name="RunManager">
     <configuration name="go build movie-tracker" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
       <module name="MovieStorageCLI" />
@@ -98,5 +103,19 @@
         </entry>
       </map>
     </option>
+  </component>
+  <component name="VgoModernizerVersionTracker">
+    <upgrades>
+      <map>
+        <entry key="$PROJECT_DIR$/go.mod">
+          <value>
+            <VersionUpgradeInfo>
+              <version>1.27</version>
+              <timestamp>1789160876969</timestamp>
+            </VersionUpgradeInfo>
+          </value>
+        </entry>
+      </map>
+    </upgrades>
   </component>
 </project>
