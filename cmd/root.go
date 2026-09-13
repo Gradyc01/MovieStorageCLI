@@ -8,6 +8,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"movie-tracker/internal/storage"
 
@@ -68,7 +69,16 @@ func Execute() {
 // the field as a statement here, instead of as part of the literal,
 // sidesteps that entirely.
 func init() {
-	store = storage.NewJSONStorage("movies.json")
+	exePath, err := os.Executable()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to locate executable:", err)
+		os.Exit(1)
+	}
+	exeDir := filepath.Dir(exePath)
+	dataPath := filepath.Join(exeDir, "movies.json")
+
+	fmt.Printf("Data path: %s\n", dataPath)
+	store = storage.NewJSONStorage(dataPath)
 
 	// Run only fires when the user invokes the binary with NO
 	// subcommand (e.g. just "./movie-tracker"). Cobra dispatches to a

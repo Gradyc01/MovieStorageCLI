@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"movie-tracker/internal/environment"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-github/github"
@@ -46,10 +47,12 @@ func NewStore() (*Store, error) {
 		return nil, err
 	}
 
-	localPath := os.Getenv("MOVIE_LOCAL_PATH")
-	if localPath == "" {
-		localPath = "movies.json" // same file your app already reads/writes locally
+	exePath, err := os.Executable()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to locate executable:", err)
+		os.Exit(1)
 	}
+	exeDir := filepath.Dir(exePath)
 
 	ts := oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token})
 	httpClient := oauth2.NewClient(context.Background(), ts)
@@ -59,7 +62,7 @@ func NewStore() (*Store, error) {
 		owner:     owner,
 		repo:      repo,
 		path:      path,
-		localPath: localPath,
+		localPath: filepath.Join(exeDir, "movies.json"),
 		branch:    "main",
 	}, nil
 }

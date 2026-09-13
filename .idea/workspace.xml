@@ -5,11 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7125f58c-51bb-4650-bbca-613b6bc92b21" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.github/workflows/release.yml" beforeDir="false" afterPath="$PROJECT_DIR$/.github/workflows/release.yml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/list.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/list.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/root.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/root.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/environment.properties" beforeDir="false" afterPath="$PROJECT_DIR$/environment.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/environment/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/environment/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/github/github.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/github/github.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
