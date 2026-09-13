@@ -26,6 +26,8 @@ jobs:
 
       - name: Upload Windows Asset
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: movie-tracker.exe
 
@@ -50,5 +52,7 @@ jobs:
 
       - name: Upload macOS Asset
         uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           files: movie-tracker.dmg
