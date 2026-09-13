@@ -1,0 +1,54 @@
+name: Build Release Assets
+
+on:
+  push:
+    tags:
+      - 'v*' # Triggers on version tags like v1.0.0
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    name: Build Windows Executable
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+
+      - name: Build Windows Binary
+        run: go build -o movie-tracker.exe .
+
+      - name: Upload Windows Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: movie-tracker.exe
+
+  build-macos:
+    name: Build macOS DMG
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.27'
+
+      - name: Build macOS Binary and DMG
+        run: |
+          go build -o movie-tracker .
+          mkdir -p dist_dmg
+          cp movie-tracker dist_dmg/
+          hdiutil create -volname "Movie Tracker Installer" -srcfolder dist_dmg -ov -format UDZO movie-tracker.dmg
+
+      - name: Upload macOS Asset
+        uses: softprops/action-gh-release@v2
+        with:
+          files: movie-tracker.dmg
