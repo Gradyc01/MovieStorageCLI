@@ -21,6 +21,13 @@ jobs:
         with:
           go-version: '1.27'
 
+      - name: Create environment.properties
+        shell: bash
+        run: |
+          cat <<EOF > environment.properties
+          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          EOF
+
       - name: Build Windows Binary
         run: go build -o movie-tracker.exe .
 
@@ -42,6 +49,13 @@ jobs:
         uses: actions/setup-go@v5
         with:
           go-version: '1.27'
+
+      - name: Create environment.properties
+        shell: bash
+        run: |
+          cat <<EOF > environment.properties
+          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
+          EOF
 
       - name: Build macOS Binary and DMG
         run: |

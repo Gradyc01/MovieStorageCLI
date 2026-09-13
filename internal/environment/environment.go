@@ -4,10 +4,15 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"path/filepath"
+	"sort"
 	"strings"
 )
 
-const PROPS_FILE = "environment.properties"
+const (
+	PROPS_FILE        = "environment.properties"
+	SYSTEM_PROPS_FILE = "system.properties"
+)
 
 func GetVariable(variable string) (string, error) {
 	if props, err := loadProperties(PROPS_FILE); err == nil {
@@ -30,6 +35,82 @@ func GetVariable(variable string) (string, error) {
 		PROPS_FILE,
 		variable,
 	)
+}
+
+// Every variable GetVariableFromOutside might be asked for that's allowed
+// to live in system.properties. Add to this list as you add new callers.
+var systemPropsKeys = []string{
+	"GITHUB_TOKEN",
+	"MOVIE_TRACKER_PAGE_SIZE",
+	"MOVIE_FILE_PATH",
+	"MOVIE_REPO",
+}
+
+func GetVariableFromOutside(variable string) (string, error) {
+	val, err := getVariableOutside(variable)
+	if err == nil {
+		return val, err
+	}
+	val2, err2 := GetVariable(variable)
+	if err2 == nil {
+		return val2, err2
+	}
+	return "", fmt.Errorf("failed to get variable %s from outside of %s and internal environment variable", variable, SYSTEM_PROPS_FILE)
+}
+
+func getVariableOutside(variable string) (string, error) {
+	exePath, err := os.Executable()
+	if err != nil {
+		return "", fmt.Errorf("locating executable path: %w", err)
+	}
+	systemPropsPath := filepath.Join(filepath.Dir(exePath), SYSTEM_PROPS_FILE)
+
+	props, err := loadProperties(systemPropsPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			if writeErr := createTemplatePropertiesFile(systemPropsPath); writeErr != nil {
+				return "", fmt.Errorf(
+					"%s not found, and creating a template failed: %w",
+					SYSTEM_PROPS_FILE, writeErr,
+				)
+			}
+			return "", fmt.Errorf(
+				"%s was missing, so a template was created at %s — fill in %s and restart",
+				SYSTEM_PROPS_FILE, systemPropsPath, variable,
+			)
+		}
+		return "", fmt.Errorf("reading %s: %w", systemPropsPath, err)
+	}
+
+	if key, ok := props[variable]; ok && key != "" {
+		return key, nil
+	}
+
+	return "", fmt.Errorf(
+		"%s not found — add it to %s or %s (%s=your_variable_here)",
+		variable, PROPS_FILE, systemPropsPath, variable,
+	)
+}
+
+// createTemplatePropertiesFile writes an empty-valued properties file
+// listing every known key, so the user has a starting point to fill in.
+func createTemplatePropertiesFile(path string) error {
+	keys := make([]string, len(systemPropsKeys))
+	copy(keys, systemPropsKeys)
+	sort.Strings(keys)
+
+	f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+
+	for _, k := range keys {
+		if _, err := fmt.Fprintf(f, "%s=\n", k); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // loadProperties reads a simple "key=value" properties file (e.g.
