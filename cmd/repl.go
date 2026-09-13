@@ -119,7 +119,7 @@ func saveListToGithub(githubStore *github.Store) {
 		fmt.Printf("error loading github store: %v\n  Changes were not saved to github :(", err)
 		return
 	}
-	fmt.Println("Success!!!")
+	fmt.Println("Successfully saved list!!!")
 }
 
 // resetFlags walks a command and all its subcommands, resetting every
