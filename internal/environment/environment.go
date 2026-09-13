@@ -2,7 +2,6 @@ package environment
 
 import (
 	"bufio"
-	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -15,32 +14,29 @@ const (
 	SYSTEM_PROPS_FILE = "system.properties"
 )
 
-// tmdbAPIKeyEncoded is set at build time via:
-//
-//	-ldflags "-X yourmodule/environment.tmdbAPIKeyEncoded=..."
-var tmdbAPIKeyEncoded string
-
-// tmdbAPIKey holds the decoded value, populated in init() below.
-var tmdbAPIKey string
-
-// buildTimeVars maps variable names to their compile-time injected values.
-// Populated in init(), not at declaration time, so it picks up the decoded
-// value rather than the zero-value tmdbAPIKey would have at var-init time.
-var buildTimeVars map[string]string
-
-func init() {
-	if tmdbAPIKeyEncoded != "" {
-		if decoded, err := base64.StdEncoding.DecodeString(tmdbAPIKeyEncoded); err == nil {
-			tmdbAPIKey = string(decoded)
-		}
-	}
-
-	buildTimeVars = map[string]string{
-		"TMDB_API_KEY": tmdbAPIKey,
-	}
+// Every variable GetVariable might be asked for that's allowed
+// to live in system.properties. Add to this list as you add new callers.
+var systemPropsKeys = []string{
+	"GITHUB_TOKEN",
+	"MOVIE_TRACKER_PAGE_SIZE",
+	"MOVIE_FILE_PATH",
+	"MOVIE_REPO",
+	"TMDB_API_KEY",
 }
 
 func GetVariable(variable string) (string, error) {
+	val, err := getVariableOutside(variable)
+	if err == nil {
+		return val, err
+	}
+	val2, err2 := getVariableFromDevFile(variable)
+	if err2 == nil {
+		return val2, err2
+	}
+	return "", fmt.Errorf("failed to get variable %s from outside of %s and internal environment variable", variable, SYSTEM_PROPS_FILE)
+}
+
+func getVariableFromDevFile(variable string) (string, error) {
 	if props, err := loadProperties(PROPS_FILE); err == nil {
 		if key, ok := props[variable]; ok && key != "" {
 			return key, nil
@@ -55,38 +51,12 @@ func GetVariable(variable string) (string, error) {
 		return key, nil
 	}
 
-	// Fall back to a value baked in at compile time (e.g. TMDB_API_KEY).
-	if key, ok := buildTimeVars[variable]; ok && key != "" {
-		return key, nil
-	}
-
 	return "", fmt.Errorf(
 		"%s not found — add it to %s (%s=your_variable_here) to set it as an environment variable",
 		variable,
 		PROPS_FILE,
 		variable,
 	)
-}
-
-// Every variable GetVariableFromOutside might be asked for that's allowed
-// to live in system.properties. Add to this list as you add new callers.
-var systemPropsKeys = []string{
-	"GITHUB_TOKEN",
-	"MOVIE_TRACKER_PAGE_SIZE",
-	"MOVIE_FILE_PATH",
-	"MOVIE_REPO",
-}
-
-func GetVariableFromOutside(variable string) (string, error) {
-	val, err := getVariableOutside(variable)
-	if err == nil {
-		return val, err
-	}
-	val2, err2 := GetVariable(variable)
-	if err2 == nil {
-		return val2, err2
-	}
-	return "", fmt.Errorf("failed to get variable %s from outside of %s and internal environment variable", variable, SYSTEM_PROPS_FILE)
 }
 
 func getVariableOutside(variable string) (string, error) {

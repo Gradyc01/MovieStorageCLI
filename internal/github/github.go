@@ -31,9 +31,9 @@ func (s *Store) LocalPath() string {
 }
 
 func NewStore() (*Store, error) {
-	token, err1 := environment.GetVariableFromOutside("GITHUB_TOKEN")
-	repoURL, err2 := environment.GetVariableFromOutside("MOVIE_REPO") // e.g. "yourname/movie-list"
-	path, err3 := environment.GetVariableFromOutside("MOVIE_FILE_PATH")
+	token, err1 := environment.GetVariable("GITHUB_TOKEN")
+	repoURL, err2 := environment.GetVariable("MOVIE_REPO") // e.g. "yourname/movie-list"
+	path, err3 := environment.GetVariable("MOVIE_FILE_PATH")
 	if err1 != nil {
 		path = "movies.json"
 	}

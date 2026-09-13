@@ -48,7 +48,7 @@ func init() {
 // pageSize reads MOVIE_TRACKER_PAGE_SIZE from the environment, falling
 // back to defaultPageSize if it's unset or not a valid positive number.
 func pageSize() int {
-	raw, err := environment.GetVariableFromOutside(MovieTrackerPageSizeVar)
+	raw, err := environment.GetVariable(MovieTrackerPageSizeVar)
 	if err != nil {
 		raw = ""
 	}
