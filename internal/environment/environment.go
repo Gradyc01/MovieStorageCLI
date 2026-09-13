@@ -2,6 +2,7 @@ package environment
 
 import (
 	"bufio"
+	"encoding/base64"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -14,13 +15,29 @@ const (
 	SYSTEM_PROPS_FILE = "system.properties"
 )
 
-// Set at build time via -ldflags "-X environment.tmdbAPIKey=..."
+// tmdbAPIKeyEncoded is set at build time via:
+//
+//	-ldflags "-X yourmodule/environment.tmdbAPIKeyEncoded=..."
+var tmdbAPIKeyEncoded string
+
+// tmdbAPIKey holds the decoded value, populated in init() below.
 var tmdbAPIKey string
 
 // buildTimeVars maps variable names to their compile-time injected values.
-// Add more entries here as more variables get baked in this way.
-var buildTimeVars = map[string]string{
-	"TMDB_API_KEY": tmdbAPIKey,
+// Populated in init(), not at declaration time, so it picks up the decoded
+// value rather than the zero-value tmdbAPIKey would have at var-init time.
+var buildTimeVars map[string]string
+
+func init() {
+	if tmdbAPIKeyEncoded != "" {
+		if decoded, err := base64.StdEncoding.DecodeString(tmdbAPIKeyEncoded); err == nil {
+			tmdbAPIKey = string(decoded)
+		}
+	}
+
+	buildTimeVars = map[string]string{
+		"TMDB_API_KEY": tmdbAPIKey,
+	}
 }
 
 func GetVariable(variable string) (string, error) {
@@ -29,13 +46,16 @@ func GetVariable(variable string) (string, error) {
 			return key, nil
 		}
 	} else if !os.IsNotExist(err) {
+		// File exists but couldn't be read for some other reason.
 		return "", fmt.Errorf("reading %s: %w", PROPS_FILE, err)
 	}
 
+	// Fall back to a real environment variable, e.g. for CI/CD.
 	if key := os.Getenv(variable); key != "" {
 		return key, nil
 	}
 
+	// Fall back to a value baked in at compile time (e.g. TMDB_API_KEY).
 	if key, ok := buildTimeVars[variable]; ok && key != "" {
 		return key, nil
 	}
