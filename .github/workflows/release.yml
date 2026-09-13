@@ -21,15 +21,8 @@ jobs:
         with:
           go-version: '1.27'
 
-      - name: Create environment.properties
-        shell: bash
-        run: |
-          cat <<EOF > environment.properties
-          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          EOF
-
       - name: Build Windows Binary
-        run: go build -o movie-tracker.exe .
+        run: go build -ldflags "-X yourmodule/environment.tmdbAPIKey=${{ secrets.TMDB_API_KEY }}" -o movie-tracker.exe .
 
       - name: Upload Windows Asset
         uses: softprops/action-gh-release@v2
@@ -50,19 +43,12 @@ jobs:
         with:
           go-version: '1.27'
 
-      - name: Create environment.properties
-        shell: bash
-        run: |
-          cat <<EOF > environment.properties
-          TMDB_API_KEY=${{ secrets.TMDB_API_KEY }}
-          EOF
-
       - name: Build macOS Binary and DMG
         run: |
-          go build -o movie-tracker .
-          mkdir -p dist_dmg
-          cp movie-tracker dist_dmg/
-          hdiutil create -volname "Movie Tracker Installer" -srcfolder dist_dmg -ov -format UDZO movie-tracker.dmg
+            go build -ldflags "-X yourmodule/environment.tmdbAPIKey=${{ secrets.TMDB_API_KEY }}" -o movie-tracker .
+            mkdir -p dist_dmg
+            cp movie-tracker dist_dmg/
+            hdiutil create -volname "Movie Tracker Installer" -srcfolder dist_dmg -ov -format UDZO movie-tracker.dmg
 
       - name: Upload macOS Asset
         uses: softprops/action-gh-release@v2

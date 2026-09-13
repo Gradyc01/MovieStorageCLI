@@ -14,18 +14,29 @@ const (
 	SYSTEM_PROPS_FILE = "system.properties"
 )
 
+// Set at build time via -ldflags "-X environment.tmdbAPIKey=..."
+var tmdbAPIKey string
+
+// buildTimeVars maps variable names to their compile-time injected values.
+// Add more entries here as more variables get baked in this way.
+var buildTimeVars = map[string]string{
+	"TMDB_API_KEY": tmdbAPIKey,
+}
+
 func GetVariable(variable string) (string, error) {
 	if props, err := loadProperties(PROPS_FILE); err == nil {
 		if key, ok := props[variable]; ok && key != "" {
 			return key, nil
 		}
 	} else if !os.IsNotExist(err) {
-		// File exists but couldn't be read for some other reason.
 		return "", fmt.Errorf("reading %s: %w", PROPS_FILE, err)
 	}
 
-	// Fall back to a real environment variable, e.g. for CI/CD.
 	if key := os.Getenv(variable); key != "" {
+		return key, nil
+	}
+
+	if key, ok := buildTimeVars[variable]; ok && key != "" {
 		return key, nil
 	}
 
