@@ -24,6 +24,13 @@ var searchCmd = &cobra.Command{
 				"\n RATING   > < =="+
 				"\n WATCHED  =="+
 				"\n TAGS contains equals "+
+				"\n GENRE contains equals "+
+				"\n FILM_TYPE contains equals "+
+				"\n PROD_COMPANY contains equals "+
+				"\n PROD_COUNTRY contains equals "+
+				"\n LANGUAGE contains equals "+
+				"\n STATUS contains equals "+
+				"\n ACTOR contains equals "+
 				"\n Example Query: TITLE contains Guardians of, RATING < 9 ", err)
 		}
 

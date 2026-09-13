@@ -89,7 +89,6 @@ func (s *Store) Load(ctx context.Context) error {
 	}
 
 	s.sha = fileContent.GetSHA()
-	fmt.Printf("SHA: %s\n", s.sha)
 
 	if err := os.WriteFile(s.localPath, []byte(raw), 0644); err != nil {
 		return fmt.Errorf("writing local cache file: %w", err)

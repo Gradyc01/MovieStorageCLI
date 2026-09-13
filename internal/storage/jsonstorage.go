@@ -154,17 +154,7 @@ func (s *JSONStorage) List() ([]*movie.Movie, error) {
 	return s.load()
 }
 
-// Search does a simple case-insensitive substring match on the title.
-// Nothing fancy — this is a placeholder you can upgrade later (fuzzy
-// matching, searching by director/franchise too, etc.).
-// DIRECTOR contains equals
-// TITLE    contains equals
-// YEAR     > < ==
-// RELEASE  > <
-// RATING   > < ==
-// WATCHED  ==
-// TAGS contains equals
-// Example Query: TITLE contains Guardians of, RATING < 9
+// Search allows the user to query the list of movies it has added.
 func (s *JSONStorage) Search(query string) ([]*movie.Movie, error) {
 	movies, err := s.load()
 	if err != nil {
@@ -215,6 +205,20 @@ func evaluate(parameter string, comparator string, targetValue string, movie *mo
 		return stringComparator(targetValue, movie.Title, comparator)
 	case "TAGS":
 		return arrayStringComparator(targetValue, movie.Tags, comparator)
+	case "GENRE":
+		return arrayStringComparator(targetValue, movie.Genres, comparator)
+	case "FILM_TYPE":
+		return stringComparator(targetValue, movie.FilmType, comparator)
+	case "PROD_COMPANY":
+		return arrayStringComparator(targetValue, movie.ProductionCompanies, comparator)
+	case "PROD_COUNTRY":
+		return arrayStringComparator(targetValue, movie.ProductionCountries, comparator)
+	case "LANGUAGE":
+		return arrayStringComparator(targetValue, movie.SpokenLanguages, comparator)
+	case "ACTOR":
+		return arrayStringComparator(targetValue, movie.KnownActors, comparator)
+	case "STATUS":
+		return stringComparator(targetValue, movie.Status, comparator)
 	case "YEAR":
 		return numberComparator(targetValue, float64(movie.Year), comparator)
 	case "RATING":

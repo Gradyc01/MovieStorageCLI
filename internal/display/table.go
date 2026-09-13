@@ -12,15 +12,6 @@ import (
 	"unicode/utf8"
 )
 
-// separatorWidth controls how long the decorative "====" lines are.
-// A fixed width is simplest; you could later compute this from
-// terminal width via term.GetSize if you want it to be responsive.
-const separatorWidth = 100
-
-// columnGap is the number of spaces inserted between columns, mirroring
-// the "4, 2" (minwidth, padding) tabwriter setup we used to have.
-const columnGap = 2
-
 // column describes one field of the table. get() must return PLAIN
 // text (no ANSI codes) — that's what column widths are computed
 // from. color(), if non-nil, is applied AFTER the plain text has
@@ -42,7 +33,7 @@ func movieColumns() []column {
 		{
 			header: "TITLE",
 			get:    func(m *movie.Movie) string { return m.Title },
-			color:  func(m *movie.Movie, s string) string { return colorize(white, s) },
+			color:  func(m *movie.Movie, s string) string { return colorizeTitle(m, s) },
 		},
 		{
 			header: "DIRECTOR/CREATOR",
@@ -103,7 +94,7 @@ func PrintMovies(movies []*movie.Movie, selectedIndex int) {
 		}
 	}
 
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+	printSeparator()
 
 	headerLine := buildPlainRow(headersOf(cols), widths)
 	fmt.Println(colorize(bold+cyan, headerLine))
@@ -138,7 +129,7 @@ func PrintMovies(movies []*movie.Movie, selectedIndex int) {
 		fmt.Println(line)
 	}
 
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+	printSeparator()
 }
 
 // buildPlainRow pads a row of plain strings to the given widths and
@@ -159,64 +150,6 @@ func headersOf(cols []column) []string {
 		out[i] = c.header
 	}
 	return out
-}
-
-// padRight right-pads s with spaces up to width, measured in runes
-// (not bytes), so it stays correct for non-ASCII director/title names.
-func padRight(s string, width int) string {
-	n := utf8.RuneCountInString(s)
-	if n >= width {
-		return s
-	}
-	return s + strings.Repeat(" ", width-n)
-}
-
-// applyRatingColor holds the actual rating->color decision, decoupled
-// from whatever text it's given. Both the table (which needs to color
-// an already width-padded cell) and detail.go (which needs to color
-// the bare, unpadded value via ratingCell) share this single switch
-// so the two views can never drift out of sync on what counts as a
-// "good" vs "bad" rating.
-func applyRatingColor(m *movie.Movie, text string) string {
-	switch {
-	case !m.Watched:
-		return colorize(dimYellow, text)
-	case m.Rating < 0:
-		return colorize(dim, text)
-	case m.Rating >= 10:
-		return colorize(limeGreen, colorize(bold, text))
-	case m.Rating >= 9:
-		return colorize(limeGreen, text)
-	case m.Rating >= 7:
-		return colorize(green, text)
-	case m.Rating >= 5:
-		return colorize(yellow, text)
-	default:
-		return colorize(red, text)
-	}
-}
-
-// colorizeRating colors an already width-padded RATING cell for the
-// list table.
-func colorizeRating(m *movie.Movie, padded string) string {
-	return applyRatingColor(m, padded)
-}
-
-// ratingCell colors the bare (unpadded) rating value. Kept as its own
-// function — rather than inlined at call sites — because detail.go's
-// PrintMovieDetail calls it directly to recolor its "Rating:" line.
-func ratingCell(m *movie.Movie) string {
-	return applyRatingColor(m, m.RatingOrWatched())
-}
-
-// orDash returns the string unchanged, or an em-dash placeholder if
-// it's empty — keeps empty optional fields from rendering as a blank,
-// hard-to-read gap in the table.
-func orDash(s string) string {
-	if s == "" {
-		return "—"
-	}
-	return s
 }
 
 // PrintPageFooter shows "Page X of Y" plus navigation hints below the

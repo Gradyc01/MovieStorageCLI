@@ -11,6 +11,7 @@ var multiWordFlags = map[string]bool{
 	"--updateTitle":     true,
 	"--updateTags":      true,
 	"--updateDirectors": true,
+	"--updateNote":      true,
 }
 
 // joinMultiWordFlagValues rewrites a token slice so that, for any flag

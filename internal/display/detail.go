@@ -1,13 +1,87 @@
+// Package display: see table.go for the package-level doc comment.
 package display
 
 import (
-	"bytes"
 	"fmt"
 	"strings"
-	"text/tabwriter"
+	"unicode/utf8"
 
 	"movie-tracker/internal/movie"
 )
+
+// detailField describes one label/value row of the detail view — the
+// vertical-layout counterpart to table.go's column. get() must return
+// PLAIN text (no ANSI codes); that's what the label:value colon
+// alignment is computed from. color(), if non-nil, is applied to the
+// plain value AFTER alignment has already been decided, same
+// "color is a pure post-processing step" rule column.color follows.
+type detailField struct {
+	label string
+	get   func(m *movie.Movie) string
+	color func(m *movie.Movie, value string) string
+}
+
+func movieDetailFields() []detailField {
+	return []detailField{
+		{
+			label: "ID",
+			get:   func(m *movie.Movie) string { return m.ID },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{
+			label: "FilmType",
+			get:   func(m *movie.Movie) string { return m.FilmType },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{
+			label: "Title",
+			get:   func(m *movie.Movie) string { return m.Title },
+			color: func(m *movie.Movie, value string) string { return colorize(bold, colorizeTitle(m, value)) },
+		},
+		{label: "Release Date", get: func(m *movie.Movie) string { return m.ReleaseDate }},
+		{
+			label: "Rating",
+			get:   func(m *movie.Movie) string { return m.RatingOrWatched() },
+			color: func(m *movie.Movie, value string) string { return applyRatingColor(m, value) },
+		},
+		{label: "Genres", get: func(m *movie.Movie) string { return m.ListDisplay(m.Genres) }},
+		{
+			label: "Tags",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.Tags) },
+			color: func(m *movie.Movie, value string) string { return colorize(darkOlive, value) },
+		},
+		{
+			label: "Directors",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.Directors) },
+			color: func(m *movie.Movie, value string) string { return colorize(cyan, value) },
+		},
+		{
+			label: "Known Actors",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.KnownActors) },
+		},
+		{
+			label: "IMDB-ID",
+			get:   func(m *movie.Movie) string { return m.ImdbID },
+			color: func(m *movie.Movie, value string) string { return colorize(white, value) },
+		},
+		{
+			label: "Production Companies",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.ProductionCompanies) },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{
+			label: "Production Countries",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.ProductionCountries) },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{
+			label: "Spoken Languages",
+			get:   func(m *movie.Movie) string { return m.ListDisplay(m.SpokenLanguages) },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{label: "Note", get: func(m *movie.Movie) string { return m.Notes }},
+	}
+}
 
 // PrintMovieDetail renders a single movie as a vertical, labeled
 // block — decorative separator lines, a centered title, then one
@@ -17,82 +91,42 @@ import (
 // it would work identically as the output of a future
 // `movie-tracker show <id>` command.
 func PrintMovieDetail(m *movie.Movie) {
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
-	fmt.Println(colorize(bold+cyan, centerText("MOVIE DETAILS", separatorWidth)))
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
+	fields := movieDetailFields()
 
-	// Same technique as the list table: build the label/value grid as
-	// PLAIN text through tabwriter first (so colon alignment is based
-	// purely on real, visible label lengths), then apply any color to
-	// the VALUE half of each line afterward, once tabwriter is done
-	// and the padding is already finalized.
-	type field struct {
-		label string
-		value string
-	}
-	fields := []field{
-		{"ID", m.ID},
-		{"Title", m.Title},
-		{"Release Date", m.ReleaseDate},
-		{"Rating", m.RatingOrWatched()},
-		{"Tags", m.ListDisplay(m.Tags)},
-		{"Directors", m.ListDisplay(m.Directors)},
-		{"IMDB-ID", m.ImdbID},
+	// Pre-compute every field's PLAIN value once — same reasoning as
+	// PrintMovies: we need it to measure the label column, and get()
+	// may not be cheap (ListDisplay joins a slice).
+	values := make([]string, len(fields))
+	for i, f := range fields {
+		values[i] = f.get(m)
 	}
 
-	var buf bytes.Buffer
-	w := tabwriter.NewWriter(&buf, 0, 4, 2, ' ', 0)
+	// Label width = widest "Label:" in the field list. Computed from
+	// plain label text only, so nothing about coloring the value can
+	// ever throw off colon alignment.
+	labelWidth := 0
 	for _, f := range fields {
-		// Value is the LAST (and only other) cell on its line, so —
-		// same rule as before — tabwriter never pads after it. That
-		// means we could safely color it even before Flush, but we
-		// keep the "color after Flush" habit here anyway for
-		// consistency and because Status gets colored conditionally
-		// based on the movie's state, which is easier to reason about
-		// as a distinct post-processing step.
-		fmt.Fprintf(w, "%s:\t%s\n", f.label, f.value)
-	}
-	w.Flush()
-
-	lines := strings.Split(strings.TrimRight(buf.String(), "\n"), "\n")
-	for i, line := range lines {
-		if fields[i].label == "Rating" {
-			line = recolorStatusLine(line, m)
+		if w := utf8.RuneCountInString(f.label) + 1; w > labelWidth { // +1 for the colon
+			labelWidth = w
 		}
-		fmt.Println(line)
 	}
 
-	fmt.Println(colorize(dim, strings.Repeat("=", separatorWidth)))
-}
+	printSeparator()
+	fmt.Println(colorize(bold+cyan, centerText("MOVIE DETAILS", separatorWidth)))
+	printSeparator()
 
-// recolorStatusLine finds the already-padded "Status:   <value>" line
-// tabwriter produced and wraps just the value portion in color. We
-// split on the FIRST tab-turned-spaces boundary isn't directly
-// available post-Flush (tabs became spaces), so instead we simply
-// re-derive the value text from the movie and re-append it colored,
-// reusing the same label prefix tabwriter already aligned for us.
-func recolorStatusLine(line string, m *movie.Movie) string {
-	plainValue := m.RatingOrWatched()
-	idx := strings.LastIndex(line, plainValue)
-	if idx == -1 {
-		// Fallback: shouldn't happen, but never crash display code
-		// over a cosmetic recoloring step.
-		return line
+	for i, f := range fields {
+		label := padRight(f.label+":", labelWidth)
+		value := values[i]
+		if f.color != nil {
+			// Coloring happens AFTER the label has been padded and
+			// the value text finalized, so color never has to be
+			// stripped out or re-derived to fix alignment — same
+			// rule table.go's per-cell coloring follows.
+			value = f.color(m, value)
+		}
+		fmt.Println(label + strings.Repeat(" ", columnGap) + value)
 	}
-	prefix := line[:idx]
-	return prefix + ratingCell(m)
-}
 
-// centerText pads s with spaces on both sides so it appears centered
-// within the given width. If s is already as wide as (or wider than)
-// width, it's returned unchanged rather than truncated — decorative
-// text overflowing slightly is harmless; cutting off letters isn't.
-func centerText(s string, width int) string {
-	if len(s) >= width {
-		return s
-	}
-	totalPadding := width - len(s)
-	left := totalPadding / 2
-	right := totalPadding - left
-	return strings.Repeat(" ", left) + s + strings.Repeat(" ", right)
+	printSeparator()
 }

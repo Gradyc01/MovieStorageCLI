@@ -15,6 +15,10 @@ import (
 )
 
 var slugRegexp = regexp.MustCompile(`[^a-z0-9-]`)
+var WATCHED string = "watched"
+var UNWATCHED string = "unwatched"
+var UNRATED string = "unrated"
+var SHORTLIST string = "shortlist"
 
 // Movie is our domain object. Capitalized field names are "exported"
 // (public) — visible to any package that imports this one. If a field
@@ -57,9 +61,9 @@ func NewMovie(title string, releaseDate string, directors []string, imdbID strin
 	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string) *Movie {
 	year := getReleaseYear(releaseDate)
 	watched := rating != -1
-	status := "unwatched"
+	status := UNWATCHED
 	if rating != -1 {
-		status = "watched"
+		status = WATCHED
 	}
 	return &Movie{
 		Version:             1,
@@ -294,9 +298,9 @@ func findSeason(show *api.TVShow, seasonNumber int) (api.Season, error) {
 // attached to *Movie, roughly like an instance method in Java, where
 // `m` plays the role of `this`.
 func (m *Movie) String() string {
-	status := "unwatched"
+	status := UNWATCHED
 	if m.Watched {
-		status = "watched"
+		status = WATCHED
 	}
 	return fmt.Sprintf("%s (%d) - %s", m.Title, m.Year, status)
 }
@@ -325,11 +329,17 @@ func (m *Movie) ListDisplay(list []string) string {
 // if the movie hasn't been watched yet, show "Unwatched"; otherwise
 // show the numeric rating (or "Unrated" if watched but never scored).
 func (m *Movie) RatingOrWatched() string {
-	if !m.Watched {
+	switch m.Status {
+	case WATCHED:
+		return fmt.Sprintf("%.1f/10", m.Rating)
+	case UNWATCHED:
 		return "Unwatched"
-	}
-	if m.Rating < 0 {
+	case UNRATED:
 		return "Unrated"
+	case SHORTLIST:
+		return "Shortlist"
+	default:
+		return m.Status
 	}
-	return fmt.Sprintf("%.1f/10", m.Rating)
+
 }

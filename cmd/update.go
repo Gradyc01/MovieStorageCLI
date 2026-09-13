@@ -15,6 +15,8 @@ var (
 	updateDirectors string
 	updateTags      string
 	updateTitle     string
+	updateActors    string
+	updateNote      string
 )
 
 // updateCmd defines "movie-tracker update <id>". It allows a user to
@@ -64,8 +66,18 @@ var updateCmd = &cobra.Command{
 			changedAnything = true
 		}
 
+		if command.Flags().Changed("updateActors") {
+			m.KnownActors = splitAndTrim(updateActors, ",")
+			changedAnything = true
+		}
+
+		if command.Flags().Changed("updateNote") {
+			m.Notes = updateNote
+			changedAnything = true
+		}
+
 		if !changedAnything {
-			fmt.Println("No fields provided. Use --updateRating, --updateDirectors, --updateTags, or --updateTitle.")
+			fmt.Println("No fields provided. Use --updateRating, --updateDirectors, --updateNote, --updateTags, or --updateTitle.")
 			return nil
 		}
 
@@ -89,17 +101,21 @@ func applyScore(m *movie.Movie, score float64) error {
 	switch {
 	case score == -1:
 		m.Watched = false
-		m.Status = "unwatched"
+		m.Status = movie.UNWATCHED
 		m.Rating = -1
 	case score == -2:
 		m.Watched = true
-		m.Status = "unrated"
+		m.Status = movie.UNRATED
 		m.Rating = -1
+	case score == -3:
+		m.Watched = false
+		m.Status = movie.SHORTLIST
+		m.Rating = -3
 	case score < 0 || score > 10:
-		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)", score)
+		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)/-3 (shortlisted)", score)
 	default:
 		m.Watched = true
-		m.Status = "watched"
+		m.Status = movie.WATCHED
 		m.Rating = score
 	}
 	return nil
@@ -126,6 +142,8 @@ func init() {
 	updateCmd.Flags().StringVar(&updateDirectors, "updateDirectors", "", "Update the directors of this movie. Connect the directors using a ','. Ex: \"David Leitch, Chad Stahelski\"")
 	updateCmd.Flags().StringVar(&updateTags, "updateTags", "", "Update what franchise this movie belongs in.")
 	updateCmd.Flags().StringVar(&updateTitle, "updateTitle", "", "Update what the movie title.")
+	updateCmd.Flags().StringVar(&updateActors, "updateActors", "", "Update who the known actors were")
+	updateCmd.Flags().StringVar(&updateNote, "updateNote", "", "Update what the note for this movie is")
 
 	rootCmd.AddCommand(updateCmd)
 }
