@@ -71,6 +71,8 @@ func applyRatingColor(m *movie.Movie, text string) string {
 		return colorize(dimYellow, text)
 	case m.Status == movie.SHORTLIST:
 		return colorize(bold, colorize(darkGold, text))
+	case m.Status == movie.WATCHING:
+		return colorize(blue, text)
 	case m.Rating < 0:
 		return colorize(dim, text)
 	case m.Rating >= 10:
@@ -99,6 +101,8 @@ func colorizeTitle(m *movie.Movie, paddedText string) string {
 		return colorize(bold, colorize(white, paddedText))
 	case movie.SHORTLIST:
 		return colorize(bold, colorize(magenta, paddedText))
+	case movie.WATCHING:
+		return colorize(bold, colorize(blue, paddedText))
 	default:
 		return colorize(white, paddedText)
 	}

@@ -19,6 +19,7 @@ var WATCHED string = "watched"
 var UNWATCHED string = "unwatched"
 var UNRATED string = "unrated"
 var SHORTLIST string = "shortlist"
+var WATCHING string = "watching"
 
 // Movie is our domain object. Capitalized field names are "exported"
 // (public) — visible to any package that imports this one. If a field
@@ -40,7 +41,7 @@ type Movie struct {
 	Directors           []string  `json:"director"`     //Has default value of ""
 	ImdbID              string    `json:"imdb_id"`      //Has default value of ""
 	AddedAt             time.Time `json:"added_at"`
-	Status              string    `json:"status"` //Can be of value watched, unwatched, unrated, shortlist
+	Status              string    `json:"status"` //Can be of value watched, unwatched, unrated, shortlist, watching
 	Genres              []string  `json:"genres"`
 	FilmType            string    `json:"film_type"` //Can be of value TV or Movie
 	Tags                []string  `json:"tags"`
@@ -338,6 +339,8 @@ func (m *Movie) RatingOrWatched() string {
 		return "Unrated"
 	case SHORTLIST:
 		return "Shortlist"
+	case WATCHING:
+		return "Watching"
 	default:
 		return m.Status
 	}

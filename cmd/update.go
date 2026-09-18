@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"movie-tracker/internal/display"
@@ -52,13 +53,11 @@ var updateCmd = &cobra.Command{
 		}
 
 		if command.Flags().Changed("updateDirectors") {
-			m.Directors = splitAndTrim(updateDirectors, ",")
-			changedAnything = true
+			m.Directors, changedAnything = parseArrayOfChanges(m.Directors, splitAndTrim(updateDirectors, ","))
 		}
 
 		if command.Flags().Changed("updateTags") {
-			m.Tags = splitAndTrim(updateTags, ",")
-			changedAnything = true
+			m.Tags, changedAnything = parseArrayOfChanges(m.Tags, splitAndTrim(updateTags, ","))
 		}
 
 		if command.Flags().Changed("updateTitle") {
@@ -67,8 +66,7 @@ var updateCmd = &cobra.Command{
 		}
 
 		if command.Flags().Changed("updateActors") {
-			m.KnownActors = splitAndTrim(updateActors, ",")
-			changedAnything = true
+			m.KnownActors, changedAnything = parseArrayOfChanges(m.KnownActors, splitAndTrim(updateActors, ","))
 		}
 
 		if command.Flags().Changed("updateNote") {
@@ -110,9 +108,13 @@ func applyScore(m *movie.Movie, score float64) error {
 	case score == -3:
 		m.Watched = false
 		m.Status = movie.SHORTLIST
-		m.Rating = -3
+		m.Rating = -1
+	case score == -4:
+		m.Watched = false
+		m.Status = movie.WATCHING
+		m.Rating = -1
 	case score < 0 || score > 10:
-		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)/-3 (shortlisted)", score)
+		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)/-3 (shortlisted)/-4 (watching)", score)
 	default:
 		m.Watched = true
 		m.Status = movie.WATCHED
@@ -135,6 +137,35 @@ func splitAndTrim(s, sep string) []string {
 		}
 	}
 	return result
+}
+
+// parseArrayOfChanges parses through a given arr of strings that begin with either a + or - dictating whether this item
+// should be removed or added from the original arr
+func parseArrayOfChanges(original []string, changes []string) ([]string, bool) {
+	result := original
+	for _, change := range changes {
+		prefix := change[0]
+		str := change[1:]
+		if prefix == '+' {
+			if !slices.Contains(result, str) {
+				result = append(result, str)
+			} else {
+				fmt.Printf("%s is already in the list and can't be added\n", str)
+				return original, false
+			}
+		} else if prefix == '-' {
+			if slices.Contains(result, str) {
+				index := slices.Index(result, str)
+				result = slices.Delete(result, index, index+1)
+			} else {
+				fmt.Printf("%s is can not be found in the list and can't be removed\n", str)
+				return original, false
+			}
+		} else {
+			return changes, true
+		}
+	}
+	return result, true
 }
 
 func init() {

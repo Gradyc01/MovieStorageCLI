@@ -44,7 +44,7 @@ func joinMultiWordFlagValues(args []string) []string {
 		// next one that looks like a flag, or the end of the args.
 		j := i + 1
 		var valueParts []string
-		for j < len(args) && !strings.HasPrefix(args[j], "-") {
+		for j < len(args) && !strings.HasPrefix(args[j], "--") {
 			valueParts = append(valueParts, args[j])
 			j++
 		}
