@@ -6,21 +6,24 @@ new records with metadata from [TMDB](https://www.themoviedb.org/) using an
 IMDb URL or ID, and provides commands for listing, searching, viewing,
 updating, and removing titles.
 
-When started without a subcommand, the application can open an interactive
-prompt and synchronize the local movie list with a JSON file in a GitHub
-repository.
+When started without a subcommand, the application opens an interactive prompt
+and can synchronize the local movie list with a JSON file in a GitHub
+repository. It also includes a natural-language assistant command powered by
+Gemini for interacting with the tracker without writing raw CLI flags.
 
 ## Requirements
 
 - Go 1.27 or later
-- A TMDB API key for the `add` command
+- A TMDB API key for the `add` command and TMDB-backed metadata lookups
+- A Gemini API key for the `clank` command
 - A GitHub personal access token and repository for interactive
   synchronization
 
 ## Configuration
 
 The application reads configuration from `environment.properties` in the
-project root. If a value is not present there, it falls back to the process
+project root. If a value is not present there, it falls back to the
+`system.properties` file created next to the executable and then the process
 environment.
 
 Create or update `environment.properties` with values appropriate for your
@@ -28,6 +31,7 @@ setup:
 
 ```properties
 TMDB_API_KEY=your_tmdb_api_key
+GEMINI_API_KEY=your_gemini_api_key
 GITHUB_TOKEN=your_github_token
 MOVIE_REPO=your-github-user/your-movie-repository
 MOVIE_FILE_PATH=your movie file path (default: movies.json)
@@ -36,6 +40,10 @@ MOVIE_TRACKER_PAGE_SIZE=tracker page size (default: 12)
 
 `TMDB_API_KEY` is required when adding a movie or TV show. The API key can be
 obtained from the TMDB account API settings.
+
+`GEMINI_API_KEY` is required for the `clank` command, which lets the CLI
+interpret natural-language requests such as "find my highest-rated sci-fi
+movies" or "add The Matrix with a score of 9".
 
 `GITHUB_TOKEN` and `MOVIE_REPO` are required only for interactive mode. The
 repository reference can be either `owner/repository` or a GitHub URL.
@@ -71,6 +79,18 @@ movies.json
 ```
 
 ## Commands
+
+### Start the interactive prompt
+
+Running the application without a subcommand opens the REPL.
+
+```bash
+movie-tracker
+```
+
+In interactive mode you can type commands directly in the terminal, and the
+application will pull and save the tracked list from GitHub when the required
+configuration is present.
 
 ### Add a movie or TV season
 
@@ -140,6 +160,19 @@ search "WATCHED == false"
 For numeric and date fields, the supported comparison operators are `>`, `<`,
 and `==`. Text fields support `contains` and `equals`.
 
+### Ask the assistant
+
+`clank` lets you issue natural-language requests that the CLI translates into
+tracker actions.
+
+```bash
+clank "show me my ten highest-rated movies"
+clank "add the movie The Matrix with a rating of 9"
+clank "find the latest Christopher Nolan film I have not watched"
+```
+
+This command requires `GEMINI_API_KEY` to be configured.
+
 ### Update a title
 
 Updates are applied to the title ID supplied as the positional argument. At
@@ -160,6 +193,9 @@ Options:
 - `--updateTags`: Replace the tag list. Separate multiple tags with commas.
 - `--updateRating`: Use `0.0` through `10.0` for a watched rating, `-1` to
   mark the title unwatched, `-2` to mark it watched but unrated. `-3` to mark it unwatched but shortlisted.
+- `--updateActors`: Replace the actor list. Separate multiple actors with
+  commas.
+- `--updateNote`: Replace the note text associated with the title.
 
 ### Remove a title
 
@@ -173,10 +209,12 @@ remove the-matrix-1999
 help
 add --help
 update --help
+clank --help
 ```
 
 ## Dependencies
 
 The CLI uses [Cobra](https://github.com/spf13/cobra) for command parsing,
-`go-github` for optional GitHub synchronization, and TMDB's API for movie and
-TV metadata.
+[Google GenAI](https://github.com/googleapis/go-genai) for the natural-language
+assistant, `go-github` for optional GitHub synchronization, and TMDB's API for
+movie and TV metadata.
