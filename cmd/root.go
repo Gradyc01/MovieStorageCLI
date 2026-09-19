@@ -7,10 +7,9 @@ package cmd
 
 import (
 	"fmt"
+	"movie-tracker/internal/actions"
 	"os"
 	"path/filepath"
-
-	"movie-tracker/internal/storage"
 
 	"github.com/spf13/cobra"
 )
@@ -25,7 +24,9 @@ import (
 // Notice the declared type is the Storage INTERFACE, not *JSONStorage.
 // Every subcommand codes against Storage, so swapping in SQLiteStorage
 // later means changing this one line, not any subcommand file.
-var store storage.Storage
+//var store storage.Storage
+
+var store *actions.Store
 
 // rootCmd is the base command — what runs when you type just
 // "movie-tracker" with no subcommand. cobra.Command's Use/Short/Long
@@ -78,7 +79,8 @@ func init() {
 	dataPath := filepath.Join(exeDir, "movies.json")
 
 	fmt.Printf("Data path: %s\n", dataPath)
-	store = storage.NewJSONStorage(dataPath)
+	//store = storage.NewJSONStorage(dataPath)
+	store = actions.CreateStore(dataPath)
 
 	// Run only fires when the user invokes the binary with NO
 	// subcommand (e.g. just "./movie-tracker"). Cobra dispatches to a

@@ -102,35 +102,38 @@ func NewMovieViaImdbLink(imdbLink string, rating float64) (*Movie, error) {
 		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
 	}
 
-	tmdbID := result.MovieResults[0].ID
-
-	credits, err := client.GetMovieCredits(tmdbID)
-	if err != nil {
-		fmt.Printf("error getting movie credits: %v\n", err)
-	}
-
 	if len(result.MovieResults) > 0 {
-		movie, err := client.GetMovie(tmdbID)
-		if err != nil {
-			return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
-		}
-		return NewMovie(
-			movie.Title,
-			movie.ReleaseDate,
-			findDirector(credits),
-			imdbID,
-			strconv.Itoa(tmdbID),
-			findGenres(movie.Genres),
-			"movie",
-			rating,
-			findFranchise(movie.BelongsToCollection),
-			findProductionCompanies(movie.ProductionCompanies),
-			findProductionCountries(movie.ProductionCountries),
-			findSpokenLanguages(movie.SpokenLanguages),
-			findKnownActors(credits),
-			"",
-		), nil
+		return createMovieFromTmdbMovieID(client, result.MovieResults[0].ID, imdbID, rating)
 	}
+	//tmdbID := result.MovieResults[0].ID
+	//
+	//credits, err := client.GetMovieCredits(tmdbID)
+	//if err != nil {
+	//	fmt.Printf("error getting movie credits: %v\n", err)
+	//}
+	//
+	//if len(result.MovieResults) > 0 {
+	//	movie, err := client.GetMovie(tmdbID)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+	//	}
+	//	return NewMovie(
+	//		movie.Title,
+	//		movie.ReleaseDate,
+	//		findDirector(credits),
+	//		imdbID,
+	//		strconv.Itoa(tmdbID),
+	//		findGenres(movie.Genres),
+	//		"movie",
+	//		rating,
+	//		findFranchise(movie.BelongsToCollection),
+	//		findProductionCompanies(movie.ProductionCompanies),
+	//		findProductionCountries(movie.ProductionCountries),
+	//		findSpokenLanguages(movie.SpokenLanguages),
+	//		findKnownActors(credits),
+	//		"",
+	//	), nil
+	//}
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
 
@@ -146,42 +149,150 @@ func NewShowViaImdbLink(imdbLink string, seasonNumber int, rating float64) (*Mov
 		return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
 	}
 
-	tmdbID := result.TVResults[0].ID
-
-	credits, err := client.GetTVCredits(tmdbID)
-	if err != nil {
-		fmt.Printf("error getting tv credits: %v\n", err)
-	}
-
 	if len(result.TVResults) > 0 {
-		tv, err := client.GetTVShow(tmdbID)
-		if err != nil {
-			return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
-		}
+		return createMovieFromTmdbTvID(client, result.TVResults[0].ID, imdbID, rating, seasonNumber)
+	}
+	//
+	//tmdbID := result.TVResults[0].ID
+	//
+	//credits, err := client.GetTVCredits(tmdbID)
+	//if err != nil {
+	//	fmt.Printf("error getting tv credits: %v\n", err)
+	//}
+	//
+	//if len(result.TVResults) > 0 {
+	//	tv, err := client.GetTVShow(tmdbID)
+	//	if err != nil {
+	//		return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
+	//	}
+	//
+	//	season, err := findSeason(tv, seasonNumber)
+	//	if err != nil {
+	//		return nil, err
+	//	}
+	//
+	//	return NewMovie(
+	//			tv.Name+" "+season.Name,
+	//			season.AirDate,
+	//			findCreators(tv.CreatedBy),
+	//			imdbID,
+	//			strconv.Itoa(tmdbID),
+	//			findGenres(tv.Genres),
+	//			"tv",
+	//			rating,
+	//			findFranchise(tv.BelongsToCollection),
+	//			findProductionCompanies(tv.ProductionCompanies),
+	//			findProductionCountries(tv.ProductionCountries),
+	//			findSpokenLanguages(tv.SpokenLanguages),
+	//			findKnownActors(credits),
+	//			""),
+	//		nil
+	//}
+	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
+}
 
-		season, err := findSeason(tv, seasonNumber)
+func NewMoviesFromMovieList(movies *api.PagedMovies) ([]*Movie, error) {
+	client := api.NewClientUsingEnvVariable()
+	var movieList []*Movie
+	for _, movie := range movies.Results {
+		m, err := createMovieFromTmdbMovieID(client, movie.ID, "", 0)
 		if err != nil {
 			return nil, err
 		}
-
-		return NewMovie(
-				tv.Name+" "+season.Name,
-				season.AirDate,
-				findCreators(tv.CreatedBy),
-				imdbID,
-				strconv.Itoa(tmdbID),
-				findGenres(tv.Genres),
-				"tv",
-				rating,
-				findFranchise(tv.BelongsToCollection),
-				findProductionCompanies(tv.ProductionCompanies),
-				findProductionCountries(tv.ProductionCountries),
-				findSpokenLanguages(tv.SpokenLanguages),
-				findKnownActors(credits),
-				""),
-			nil
+		movieList = append(movieList, m)
 	}
-	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
+	return movieList, nil
+}
+
+func NewMoviesFromTVList(shows *api.PagedTVShows) ([]*Movie, error) {
+	client := api.NewClientUsingEnvVariable()
+	var movieList []*Movie
+	for _, show := range shows.Results {
+		m, err := createMovieFromTmdbTvID(client, show.ID, "", 0, 1)
+		if err != nil {
+			return nil, err
+		}
+		movieList = append(movieList, m)
+	}
+	return movieList, nil
+}
+
+func createMovieFromTmdbMovieID(client *api.Client, tmdbID int, imdbID string, rating float64) (*Movie, error) {
+	credits, err := client.GetMovieCredits(tmdbID)
+	if err != nil {
+		fmt.Printf("error getting movie credits: %v\n", err)
+	}
+
+	if imdbID == "" {
+		externalIds, err := client.GetExternalId("movie", tmdbID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting external ids: %v\n", err)
+		}
+		imdbID = externalIds.ImdbId
+	}
+
+	movie, err := client.GetMovie(tmdbID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+	}
+	return NewMovie(
+		movie.Title,
+		movie.ReleaseDate,
+		findDirector(credits),
+		imdbID,
+		strconv.Itoa(tmdbID),
+		findGenres(movie.Genres),
+		"movie",
+		rating,
+		findFranchise(movie.BelongsToCollection),
+		findProductionCompanies(movie.ProductionCompanies),
+		findProductionCountries(movie.ProductionCountries),
+		findSpokenLanguages(movie.SpokenLanguages),
+		findKnownActors(credits),
+		"",
+	), nil
+}
+
+func createMovieFromTmdbTvID(client *api.Client, tmdbID int, imdbID string, rating float64, seasonNumber int) (*Movie, error) {
+	credits, err := client.GetTVCredits(tmdbID)
+	if err != nil {
+		fmt.Printf("error getting movie credits: %v\n", err)
+	}
+
+	if imdbID == "" {
+		externalIds, err := client.GetExternalId("tv", tmdbID)
+		if err != nil {
+			return nil, fmt.Errorf("error getting external ids: %v\n", err)
+		}
+		imdbID = externalIds.ImdbId
+	}
+
+	tv, err := client.GetTVShow(tmdbID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+	}
+
+	season, err := findSeason(tv, seasonNumber)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewMovie(
+		tv.Name+" "+season.Name,
+		season.AirDate,
+		findCreators(tv.CreatedBy),
+		imdbID,
+		strconv.Itoa(tmdbID),
+		findGenres(tv.Genres),
+		"tv",
+		rating,
+		findFranchise(tv.BelongsToCollection),
+		findProductionCompanies(tv.ProductionCompanies),
+		findProductionCountries(tv.ProductionCountries),
+		findSpokenLanguages(tv.SpokenLanguages),
+		findKnownActors(credits),
+		"",
+	), nil
 }
 
 func generateID(title string, year int) string {

@@ -23,6 +23,7 @@ func PrintInitialWelcomeMessage() {
 		{"list", "List all tracked movies"},
 		{"search", "Search tracked movies by title"},
 		{"update", "Update fields on an existing movie"},
+		{"clank", "Uses the AI assistant to help with tasks"},
 	}
 
 	// Right-pad every command name to the widest one, the same

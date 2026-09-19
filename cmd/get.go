@@ -1,10 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"movie-tracker/internal/display"
-
 	"github.com/spf13/cobra"
 )
 
@@ -17,15 +13,8 @@ var getCmd = &cobra.Command{
 	Short: "Show detailed information about a specific movie",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(command *cobra.Command, args []string) error {
-		id := args[0]
-
-		m, err := store.GetByID(id)
-		if err != nil {
-			return fmt.Errorf("could not get movie: %w", err)
-		}
-
-		display.PrintMovieDetail(m)
-		return nil
+		_, err := store.GetMovie(args[0])
+		return err
 	},
 }
 

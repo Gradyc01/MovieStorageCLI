@@ -5,11 +5,37 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7125f58c-51bb-4650-bbca-613b6bc92b21" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/.idea/dictionaries/project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/cmd/clank.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/add.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/find.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/get.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/list.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/remove.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/root.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/search.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/actions/update.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/gemini/chat.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/gemini/executor.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/gemini/prompt.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/gemini/tools.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/system.properties" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cmd/argparse.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/argparse.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/add.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/add.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/get.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/get.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/keys.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/keys.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/list.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/list.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/remove.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/remove.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/root.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/root.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/search.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/search.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/cmd/update.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/update.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/environment.properties" beforeDir="false" afterPath="$PROJECT_DIR$/environment.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/display/common.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/common.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.mod" beforeDir="false" afterPath="$PROJECT_DIR$/go.mod" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/api/tmdb.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/api/tmdb.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/display/initial.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/initial.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/display/table.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/table.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/environment/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/environment/environment.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/movie/movie.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/movie/movie.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -52,15 +78,19 @@
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "master",
     "go.sdk.automatically.set": "true",
-    "last_opened_file_path": "C:/Users/Dep/IdeaProjects/MovieStorageCLI",
+    "last_opened_file_path": "C:/Users/Dep/IdeaProjects/MovieStorageCLI/internal/actions",
     "nodejs_package_manager_path": "npm"
   }
 }]]></component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
+      <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\internal\actions" />
+      <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\cmd" />
       <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI" />
     </key>
     <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\internal\display" />
+      <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\cmd" />
       <recent name="C:\Users\Dep\IdeaProjects\MovieStorageCLI\internal\github" />
     </key>
   </component>
@@ -120,5 +150,16 @@
         </entry>
       </map>
     </upgrades>
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="DlvLineBreakpoint">
+          <url>file://$PROJECT_DIR$/cmd/clank.go</url>
+          <line>31</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
   </component>
 </project>

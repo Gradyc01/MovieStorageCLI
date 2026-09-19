@@ -176,6 +176,12 @@ type TVShow struct {
 	Genres              []Genres            `json:"genres"`
 }
 
+// ExternalIds represents a subset of fields returned for external ids of TV or Movie
+type ExternalIds struct {
+	ID     int    `json:"id"`
+	ImdbId string `json:"imdb_id"`
+}
+
 // Credits represents a subset of fields returned for credits of TV or Movie.
 type Credits struct {
 	ID   int      `json:"id"`
@@ -332,11 +338,14 @@ func (c *Client) FindByIMDbURL(imdbURLOrID string) (*FindResults, error) {
 // ---------- Search endpoints ----------
 
 // SearchMovies searches for movies matching the given query string.
-func (c *Client) SearchMovies(query string, page int) (*PagedMovies, error) {
+func (c *Client) SearchMovies(query string, year string, page int) (*PagedMovies, error) {
 	var out PagedMovies
 	params := map[string]string{
 		"query": query,
 		"page":  strconv.Itoa(maxInt(page, 1)),
+	}
+	if year != "" {
+		params["year"] = year
 	}
 	if err := c.get("/search/movie", params, &out); err != nil {
 		return nil, err
@@ -345,11 +354,14 @@ func (c *Client) SearchMovies(query string, page int) (*PagedMovies, error) {
 }
 
 // SearchTVShows searches for TV shows matching the given query string.
-func (c *Client) SearchTVShows(query string, page int) (*PagedTVShows, error) {
+func (c *Client) SearchTVShows(query string, year string, page int) (*PagedTVShows, error) {
 	var out PagedTVShows
 	params := map[string]string{
 		"query": query,
 		"page":  strconv.Itoa(maxInt(page, 1)),
+	}
+	if year != "" {
+		params["year"] = year
 	}
 	if err := c.get("/search/tv", params, &out); err != nil {
 		return nil, err
@@ -403,6 +415,16 @@ func (c *Client) GetTVCredits(tvID int) (*Credits, error) {
 func (c *Client) GetTVShow(tvID int) (*TVShow, error) {
 	var out TVShow
 	if err := c.get(fmt.Sprintf("/tv/%d", tvID), nil, &out); err != nil {
+		return nil, err
+	}
+	return &out, nil
+}
+
+// GetExternalId fetches external ids for movie
+// filmType must be either 'movie' or 'tv'
+func (c *Client) GetExternalId(filmType string, tmdbId int) (*ExternalIds, error) {
+	var out ExternalIds
+	if err := c.get(fmt.Sprintf("/%s/%d/external_ids", filmType, tmdbId), nil, &out); err != nil {
 		return nil, err
 	}
 	return &out, nil
@@ -496,53 +518,3 @@ func maxInt(a, b int) int {
 	}
 	return b
 }
-
-// ---------- Example usage ----------
-
-//func main() {
-//	apiKey, err := getAPIKey()
-//	if err != nil {
-//		fmt.Println("Error:", err)
-//		os.Exit(1)
-//	}
-//
-//	client := NewClient(apiKey)
-//
-//	// Example: Look up a Movie/TV show from a pasted IMDb link.
-//	imdbInput := "https://www.imdb.com/title/tt1375666/" // e.g. Inception
-//	result, err := client.FindByIMDbURL(imdbInput)
-//	if err != nil {
-//		fmt.Println("Error looking up IMDb ID:", err)
-//		os.Exit(1)
-//	}
-//
-//	switch {
-//	case len(result.MovieResults) > 0:
-//		m := result.MovieResults[0]
-//		fmt.Println("Found movie:", m.Title)
-//		fmt.Println("Release date:", m.ReleaseDate)
-//		fmt.Println("Overview:", m.Overview)
-//		fmt.Println("Rating:", m.VoteAverage)
-//		fmt.Println("Poster:", PosterURL(m.PosterPath, "w500"))
-//
-//	case len(result.TVResults) > 0:
-//		t := result.TVResults[0]
-//		fmt.Println("Found TV show:", t.Name)
-//		fmt.Println("First air date:", t.FirstAirDate)
-//		fmt.Println("Overview:", t.Overview)
-//		fmt.Println("Rating:", t.VoteAverage)
-//		fmt.Println("Poster:", PosterURL(t.PosterPath, "w500"))
-//
-//	case len(result.TVEpisodeResults) > 0:
-//		e := result.TVEpisodeResults[0]
-//		fmt.Printf("Found episode: S%02dE%02d - %s\n", e.SeasonNumber, e.EpisodeNumber, e.Name)
-//		fmt.Println("Overview:", e.Overview)
-//
-//	case len(result.PersonResults) > 0:
-//		p := result.PersonResults[0]
-//		fmt.Println("Found person:", p.Name)
-//
-//	default:
-//		fmt.Println("No match found on TMDB for that IMDb ID.")
-//	}
-//}

@@ -10,7 +10,7 @@
 // standard library doesn't expose. golang.org/x/term (an official
 // Go team package, just not bundled into the stdlib) wraps the
 // platform-specific syscalls for both Unix and Windows.
-package cmd
+package display
 
 import (
 	"bufio"

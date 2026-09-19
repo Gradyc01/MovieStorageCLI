@@ -1,11 +1,6 @@
 package cmd
 
 import (
-	"fmt"
-
-	"movie-tracker/internal/display"
-	"movie-tracker/internal/movie"
-
 	"github.com/spf13/cobra"
 )
 
@@ -31,24 +26,8 @@ var addCmd = &cobra.Command{
 	// code automatically — similar to letting a checked exception
 	// propagate up to a top-level handler in Java.
 	RunE: func(command *cobra.Command, args []string) error {
-		var err error
-		var m *movie.Movie
-		if addSeason != 0 {
-			m, err = movie.NewShowViaImdbLink(args[0], addSeason, rating)
-		} else {
-			m, err = movie.NewMovieViaImdbLink(args[0], rating)
-		}
-		if err != nil {
-			return err
-		}
-
-		if err := store.Add(m); err != nil {
-			return fmt.Errorf("could not add movie: %w", err)
-		}
-
-		display.PrintSuccess("Movie added successfully!")
-		display.PrintMovieDetail(m)
-		return nil
+		_, err := store.AddMovie(args[0], rating, addSeason)
+		return err
 	},
 }
 
