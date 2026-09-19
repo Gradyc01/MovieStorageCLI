@@ -147,6 +147,13 @@ Supported fields and operators:
 | `RATING` | `>`, `<`, `==` | Number |
 | `RELEASE` | `>`, `<`, `==` | `YYYY-MM-DD` |
 | `WATCHED` | `==` | `true` or `false` |
+| `GENRE` | `contains`, `equals` | Text |
+| `FILM_TYPE` | `contains`, `equals` | Text |
+| `PROD_COMPANY` | `contains`, `equals` | Text |
+| `PROD_COUNTRY` | `contains`, `equals` | Text |
+| `LANGUAGE` | `contains`, `equals` | Text |
+| `STATUS` | `contains`, `equals` | Text |
+| `ACTOR` | `contains`, `equals` | Text |
 
 Examples:
 
