@@ -35,29 +35,29 @@ func movieDetailFields() []detailField {
 		},
 		{
 			label: "Title",
-			get:   func(m *movie.Movie) string { return m.Title },
+			get:   func(m *movie.Movie) string { return movie.GetValue(m.Title) },
 			color: func(m *movie.Movie, value string) string { return colorize(bold, colorizeTitle(m, value)) },
 		},
-		{label: "Release Date", get: func(m *movie.Movie) string { return m.ReleaseDate }},
+		{label: "Release Date", get: func(m *movie.Movie) string { return movie.GetValue(m.ReleaseDate) }},
 		{
 			label: "Rating",
 			get:   func(m *movie.Movie) string { return m.RatingOrWatched() },
 			color: func(m *movie.Movie, value string) string { return applyRatingColor(m, value) },
 		},
-		{label: "Genres", get: func(m *movie.Movie) string { return m.ListDisplay(m.Genres) }},
+		{label: "Genres", get: func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.Genres)) }},
 		{
 			label: "Tags",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.Tags) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.Tags)) },
 			color: func(m *movie.Movie, value string) string { return colorize(darkOlive, value) },
 		},
 		{
 			label: "Directors",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.Directors) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.Directors)) },
 			color: func(m *movie.Movie, value string) string { return colorize(cyan, value) },
 		},
 		{
 			label: "Known Actors",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.KnownActors) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.KnownActors)) },
 		},
 		{
 			label: "IMDB-ID",
@@ -66,17 +66,17 @@ func movieDetailFields() []detailField {
 		},
 		{
 			label: "Production Companies",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.ProductionCompanies) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.ProductionCompanies)) },
 			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
 		},
 		{
 			label: "Production Countries",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.ProductionCountries) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.ProductionCountries)) },
 			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
 		},
 		{
 			label: "Spoken Languages",
-			get:   func(m *movie.Movie) string { return m.ListDisplay(m.SpokenLanguages) },
+			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.SpokenLanguages)) },
 			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
 		},
 		{label: "Note", get: func(m *movie.Movie) string { return m.Notes }},

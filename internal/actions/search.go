@@ -23,6 +23,8 @@ func (store *Store) SearchMovie(query string) ([]*movie.Movie, error) {
 			"\n LANGUAGE contains equals "+
 			"\n STATUS contains equals "+
 			"\n ACTOR contains equals "+
+			"\n FINISHED < > == "+
+			"\n ADDED < > =="+
 			"\n Example Query: TITLE contains Guardians of, RATING < 9 ", err)
 	}
 

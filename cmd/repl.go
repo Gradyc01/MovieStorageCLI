@@ -29,6 +29,17 @@ func RunInteractive() {
 		return
 	}
 	pullListFromGithub(githubStore)
+
+	movies, err := store.ListMovie()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	if err := store.RefreshMovies(movies); err != nil {
+		return
+	}
+
 	display.PrintInitialWelcomeMessage()
 	// bufio.Scanner reads stdin line by line. This is roughly the Go
 	// equivalent of wrapping System.in in a BufferedReader and calling

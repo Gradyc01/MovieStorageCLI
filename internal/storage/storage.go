@@ -11,6 +11,13 @@ import (
 	"movie-tracker/internal/movie"
 )
 
+var CurrentStorageVersion = 2
+
+type MovieStorage struct {
+	Version int            `json:"version"`
+	Movies  []*movie.Movie `json:"movies"`
+}
+
 // Storage is the contract every backend must satisfy. In Go, you do
 // NOT write "class JSONStorage implements Storage". Instead, any type
 // that happens to have methods matching this exact signature list

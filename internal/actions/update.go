@@ -6,6 +6,7 @@ import (
 	"movie-tracker/internal/movie"
 	"slices"
 	"strings"
+	"time"
 )
 
 type UpdateFields struct {
@@ -42,7 +43,10 @@ func (store *Store) UpdateMovie(id string, fields UpdateFields) (*movie.Movie, e
 	}
 
 	if fields.Title != nil {
-		m.Title = *fields.Title
+		m.Title = movie.Value[string]{
+			Value:     *fields.Title,
+			EntryType: movie.MANUAL,
+		}
 		changedAnything = true
 	}
 
@@ -91,55 +95,69 @@ func SplitAndTrim(s, sep string) []string {
 func applyScore(m *movie.Movie, score float64) error {
 	switch {
 	case score == -1:
-		m.Watched = false
+		setWatched(m, false)
 		m.Status = movie.UNWATCHED
 		m.Rating = -1
 	case score == -2:
-		m.Watched = true
+		setWatched(m, true)
 		m.Status = movie.UNRATED
 		m.Rating = -1
 	case score == -3:
-		m.Watched = false
+		setWatched(m, false)
 		m.Status = movie.SHORTLIST
 		m.Rating = -1
 	case score == -4:
-		m.Watched = false
+		setWatched(m, false)
 		m.Status = movie.WATCHING
 		m.Rating = -1
 	case score < 0 || score > 10:
 		return fmt.Errorf("invalid score %.1f: must be 0-10, or -1 (unwatched)/-2 (unrated)/-3 (shortlisted)/-4 (watching)", score)
 	default:
-		m.Watched = true
+		setWatched(m, true)
 		m.Status = movie.WATCHED
 		m.Rating = score
 	}
 	return nil
 }
 
+func setWatched(m *movie.Movie, watched bool) {
+	if watched {
+		m.Watched = true
+		m.FinishedAt = time.Now().Format(time.DateOnly)
+	} else {
+		m.Watched = false
+		m.FinishedAt = movie.UNWATCHED
+	}
+}
+
 // parseArrayOfChanges parses through a given arr of strings that begin with either a + or - dictating whether this item
 // should be removed or added from the original arr
-func parseArrayOfChanges(original []string, changes []string) ([]string, bool) {
+func parseArrayOfChanges(original []movie.Value[string], changes []string) ([]movie.Value[string], bool) {
 	result := original
 	for _, change := range changes {
 		prefix := change[0]
 		str := change[1:]
 		if prefix == '+' {
-			if !slices.Contains(result, str) {
-				result = append(result, str)
+			if !slices.Contains(movie.GetValueList(result), str) {
+				result = append(result, movie.Value[string]{
+					Value:     str,
+					EntryType: movie.MANUAL,
+				})
 			} else {
 				fmt.Printf("%s is already in the list and can't be added\n", str)
 				return original, false
 			}
 		} else if prefix == '-' {
-			if slices.Contains(result, str) {
-				index := slices.Index(result, str)
+			if slices.Contains(movie.GetValueList(result), str) {
+				index := slices.Index(movie.GetValueList(result), str)
 				result = slices.Delete(result, index, index+1)
 			} else {
 				fmt.Printf("%s is can not be found in the list and can't be removed\n", str)
 				return original, false
 			}
 		} else {
-			return changes, true
+			fmt.Printf("%s uses the incorrect formatting of +, -\n", str)
+			return original, false
 		}
 	}
 	return result, true

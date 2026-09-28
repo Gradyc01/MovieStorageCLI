@@ -63,17 +63,28 @@ func (s *JSONStorage) load() ([]*movie.Movie, error) {
 		return []*movie.Movie{}, nil
 	}
 
-	var movies []*movie.Movie
-	// json.Unmarshal parses the []byte into the given Go value. The
-	// second argument (&movies) is a pointer because Unmarshal needs
-	// to write INTO your variable — same reason Java's ObjectMapper
-	// needs a Class<T> reference for reflection-based hydration, just
-	// achieved differently here (via a pointer instead of reflection
-	// on a class token).
-	if err := json.Unmarshal(data, &movies); err != nil {
-		return nil, fmt.Errorf("parsing storage file: %w", err)
+	var probe struct {
+		Version int `json:"version"`
 	}
-	return movies, nil
+
+	var movieStorage *MovieStorage
+	if err := json.Unmarshal(data, &probe); err != nil {
+		storage, err := TryLoadingVersion1MovieStorage(data)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshalling storage file: %w", err)
+		}
+		fmt.Printf("MovieStorage system was still on the old version. Converted & Loaded storage file: %s\n", s.filePath)
+		return storage.Movies, nil
+	}
+
+	if probe.Version != CurrentStorageVersion {
+		return nil, fmt.Errorf("storage file version mismatch (expected %d, got %d)", CurrentStorageVersion, probe.Version)
+	}
+
+	if err := json.Unmarshal(data, &movieStorage); err != nil {
+		return nil, fmt.Errorf("unmarshalling storage file: %w", err)
+	}
+	return movieStorage.Movies, nil
 }
 
 // save writes the given slice back to the JSON file, overwriting
@@ -84,7 +95,7 @@ func (s *JSONStorage) save(movies []*movie.Movie) error {
 	// MarshalIndent produces pretty-printed JSON (2-space indent) so
 	// the file is human-readable if you ever open it directly — useful
 	// while learning/debugging.
-	data, err := json.MarshalIndent(movies, "", "  ")
+	data, err := json.MarshalIndent(MovieStorage{Version: CurrentStorageVersion, Movies: movies}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encoding movies: %w", err)
 	}
@@ -190,50 +201,47 @@ func (s *JSONStorage) Search(query string) ([]*movie.Movie, error) {
 	return results, nil
 }
 
-func evaluate(parameter string, comparator string, targetValue string, movie *movie.Movie) bool {
+func evaluate(parameter string, comparator string, targetValue string, m *movie.Movie) bool {
 	switch parameter {
 	case "DIRECTOR":
-		{
-			for _, director := range movie.Directors {
-				if stringComparator(targetValue, director, comparator) {
-					return true
-				}
-			}
-			return false
-		}
+		return arrayStringComparator(targetValue, movie.GetValueList(m.Directors), comparator)
 	case "TITLE":
-		return stringComparator(targetValue, movie.Title, comparator)
+		return stringComparator(targetValue, movie.GetValue(m.Title), comparator)
 	case "TAGS":
-		return arrayStringComparator(targetValue, movie.Tags, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.Tags), comparator)
 	case "GENRE":
-		return arrayStringComparator(targetValue, movie.Genres, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.Genres), comparator)
 	case "FILM_TYPE":
-		return stringComparator(targetValue, movie.FilmType, comparator)
+		return stringComparator(targetValue, m.FilmType, comparator)
 	case "PROD_COMPANY":
-		return arrayStringComparator(targetValue, movie.ProductionCompanies, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.ProductionCompanies), comparator)
 	case "PROD_COUNTRY":
-		return arrayStringComparator(targetValue, movie.ProductionCountries, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.ProductionCountries), comparator)
 	case "LANGUAGE":
-		return arrayStringComparator(targetValue, movie.SpokenLanguages, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.SpokenLanguages), comparator)
 	case "ACTOR":
-		return arrayStringComparator(targetValue, movie.KnownActors, comparator)
+		return arrayStringComparator(targetValue, movie.GetValueList(m.KnownActors), comparator)
 	case "STATUS":
-		return stringComparator(targetValue, movie.Status, comparator)
+		return stringComparator(targetValue, m.Status, comparator)
 	case "YEAR":
-		return numberComparator(targetValue, float64(movie.Year), comparator)
+		return numberComparator(targetValue, float64(movie.GetValue(m.Year)), comparator)
 	case "RATING":
-		return numberComparator(targetValue, movie.Rating, comparator)
+		return numberComparator(targetValue, m.Rating, comparator)
 	case "RELEASE":
-		return dateComparator(targetValue, movie.ReleaseDate, comparator)
+		return dateComparator(targetValue, movie.GetValue(m.ReleaseDate), comparator)
 	case "WATCHED":
 		switch targetValue {
 		case "true":
-			return movie.Watched
+			return m.Watched
 		case "false":
-			return !movie.Watched
+			return !m.Watched
 		default:
 			return false
 		}
+	case "FINISHED":
+		return dateComparator(targetValue, m.FinishedAt, comparator)
+	case "ADDED":
+		return dateComparator(targetValue, m.AddedAt.Format(time.DateOnly), comparator)
 	default:
 		return false
 	}

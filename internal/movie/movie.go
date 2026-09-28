@@ -15,11 +15,24 @@ import (
 )
 
 var slugRegexp = regexp.MustCompile(`[^a-z0-9-]`)
+
+// Status Types
 var WATCHED string = "watched"
 var UNWATCHED string = "unwatched"
 var UNRATED string = "unrated"
 var SHORTLIST string = "shortlist"
 var WATCHING string = "watching"
+
+// Entry Types
+var MANUAL string = "manual"
+var DATABASE string = "database"
+
+// Value is a Value type for movies.
+// It contains the actual Value and whether it was inputted by the user or by the database
+type Value[T any] struct {
+	Value     T      `json:"value"`
+	EntryType string `json:"entry_type"`
+}
 
 // Movie is our domain object. Capitalized field names are "exported"
 // (public) — visible to any package that imports this one. If a field
@@ -31,6 +44,32 @@ var WATCHING string = "watching"
 // this field when converting to/from JSON. Think of it like Jackson's
 // @JsonProperty annotation in Java, but built into the language.
 type Movie struct {
+	Version             int             `json:"version"`
+	ID                  string          `json:"id"`
+	Title               Value[string]   `json:"title"`
+	Year                Value[int]      `json:"year"`
+	ReleaseDate         Value[string]   `json:"release_date"` //Has default value of ""
+	Watched             bool            `json:"watched"`      //Has default value of false
+	Rating              float64         `json:"rating"`       //Has default value of -1
+	Directors           []Value[string] `json:"director"`     //Has default value of ""
+	ImdbID              string          `json:"imdb_id"`      //Has default value of ""
+	AddedAt             time.Time       `json:"added_at"`
+	Status              string          `json:"status"` //Can be of value watched, unwatched, unrated, shortlist, watching
+	Genres              []Value[string] `json:"genres"`
+	FilmType            string          `json:"film_type"` //Can be of value TV or Movie
+	Tags                []Value[string] `json:"tags"`
+	ProductionCompanies []Value[string] `json:"production_companies"`
+	ProductionCountries []Value[string] `json:"production_countries"`
+	SpokenLanguages     []Value[string] `json:"spoken_languages"`
+	KnownActors         []Value[string] `json:"known_actors"`
+	TmdbID              string          `json:"tmdb_id"`
+	Notes               string          `json:"notes"`
+	FinishedAt          string          `json:"finished_at"`
+	LastUpdated         time.Time       `json:"last_updated"`
+	TVSeason            int             `json:"tv_season"` // 0 == No season number (movie), -1 == Legacy TV series (no season tracked)
+}
+
+type LegacyMovieVersion1 struct {
 	Version             int       `json:"version"`
 	ID                  string    `json:"id"`
 	Title               string    `json:"title"`
@@ -59,34 +98,41 @@ type Movie struct {
 // a reference to one shared instance, similar to how Java objects
 // are always references under the hood.
 func NewMovie(title string, releaseDate string, directors []string, imdbID string, tmdbID string, genres []string, filmType string, rating float64, tags []string,
-	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string) *Movie {
+	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string, tvSeason int) *Movie {
 	year := getReleaseYear(releaseDate)
 	watched := rating != -1
 	status := UNWATCHED
 	if rating != -1 {
 		status = WATCHED
 	}
+	finishedAt := UNWATCHED
+	if watched {
+		finishedAt = time.Now().Format(time.DateOnly)
+	}
 	return &Movie{
 		Version:             1,
 		ID:                  generateID(title, year),
-		Title:               title,
-		Year:                year,
-		ReleaseDate:         releaseDate,
+		Title:               Value[string]{Value: title, EntryType: DATABASE},
+		Year:                Value[int]{Value: year, EntryType: DATABASE},
+		ReleaseDate:         Value[string]{Value: releaseDate, EntryType: DATABASE},
 		Watched:             watched,
 		Rating:              rating,
-		Directors:           directors,
+		Directors:           ConvertArrayToValueList(directors, DATABASE),
 		ImdbID:              imdbID,
 		AddedAt:             time.Now(),
 		Status:              status,
-		Genres:              genres,
+		Genres:              ConvertArrayToValueList(genres, DATABASE),
 		FilmType:            filmType,
-		Tags:                tags,
-		ProductionCompanies: prodCompanies,
-		ProductionCountries: prodCountries,
-		SpokenLanguages:     languages,
-		KnownActors:         actors,
+		Tags:                ConvertArrayToValueList(tags, DATABASE),
+		ProductionCompanies: ConvertArrayToValueList(prodCompanies, DATABASE),
+		ProductionCountries: ConvertArrayToValueList(prodCountries, DATABASE),
+		SpokenLanguages:     ConvertArrayToValueList(languages, DATABASE),
+		KnownActors:         ConvertArrayToValueList(actors, DATABASE),
 		TmdbID:              tmdbID,
 		Notes:               notes,
+		FinishedAt:          finishedAt,
+		LastUpdated:         time.Now(),
+		TVSeason:            tvSeason,
 	}
 }
 
@@ -105,35 +151,6 @@ func NewMovieViaImdbLink(imdbLink string, rating float64) (*Movie, error) {
 	if len(result.MovieResults) > 0 {
 		return createMovieFromTmdbMovieID(client, result.MovieResults[0].ID, imdbID, rating)
 	}
-	//tmdbID := result.MovieResults[0].ID
-	//
-	//credits, err := client.GetMovieCredits(tmdbID)
-	//if err != nil {
-	//	fmt.Printf("error getting movie credits: %v\n", err)
-	//}
-	//
-	//if len(result.MovieResults) > 0 {
-	//	movie, err := client.GetMovie(tmdbID)
-	//	if err != nil {
-	//		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
-	//	}
-	//	return NewMovie(
-	//		movie.Title,
-	//		movie.ReleaseDate,
-	//		findDirector(credits),
-	//		imdbID,
-	//		strconv.Itoa(tmdbID),
-	//		findGenres(movie.Genres),
-	//		"movie",
-	//		rating,
-	//		findFranchise(movie.BelongsToCollection),
-	//		findProductionCompanies(movie.ProductionCompanies),
-	//		findProductionCountries(movie.ProductionCountries),
-	//		findSpokenLanguages(movie.SpokenLanguages),
-	//		findKnownActors(credits),
-	//		"",
-	//	), nil
-	//}
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
 
@@ -152,42 +169,6 @@ func NewShowViaImdbLink(imdbLink string, seasonNumber int, rating float64) (*Mov
 	if len(result.TVResults) > 0 {
 		return createMovieFromTmdbTvID(client, result.TVResults[0].ID, imdbID, rating, seasonNumber)
 	}
-	//
-	//tmdbID := result.TVResults[0].ID
-	//
-	//credits, err := client.GetTVCredits(tmdbID)
-	//if err != nil {
-	//	fmt.Printf("error getting tv credits: %v\n", err)
-	//}
-	//
-	//if len(result.TVResults) > 0 {
-	//	tv, err := client.GetTVShow(tmdbID)
-	//	if err != nil {
-	//		return nil, fmt.Errorf("error getting tv by IMDB URL: %w", err)
-	//	}
-	//
-	//	season, err := findSeason(tv, seasonNumber)
-	//	if err != nil {
-	//		return nil, err
-	//	}
-	//
-	//	return NewMovie(
-	//			tv.Name+" "+season.Name,
-	//			season.AirDate,
-	//			findCreators(tv.CreatedBy),
-	//			imdbID,
-	//			strconv.Itoa(tmdbID),
-	//			findGenres(tv.Genres),
-	//			"tv",
-	//			rating,
-	//			findFranchise(tv.BelongsToCollection),
-	//			findProductionCompanies(tv.ProductionCompanies),
-	//			findProductionCountries(tv.ProductionCountries),
-	//			findSpokenLanguages(tv.SpokenLanguages),
-	//			findKnownActors(credits),
-	//			""),
-	//		nil
-	//}
 	return nil, fmt.Errorf("no match found on TMDB for that IMDb ID")
 }
 
@@ -250,6 +231,7 @@ func createMovieFromTmdbMovieID(client *api.Client, tmdbID int, imdbID string, r
 		findSpokenLanguages(movie.SpokenLanguages),
 		findKnownActors(credits),
 		"",
+		0,
 	), nil
 }
 
@@ -292,6 +274,7 @@ func createMovieFromTmdbTvID(client *api.Client, tmdbID int, imdbID string, rati
 		findSpokenLanguages(tv.SpokenLanguages),
 		findKnownActors(credits),
 		"",
+		seasonNumber,
 	), nil
 }
 

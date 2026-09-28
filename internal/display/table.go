@@ -219,16 +219,16 @@ func movieColumns() []column {
 		},
 		{
 			header: "TITLE",
-			get:    func(m *movie.Movie) string { return m.Title },
+			get:    func(m *movie.Movie) string { return movie.GetValue(m.Title) },
 			color:  func(m *movie.Movie, s string) string { return colorizeTitle(m, s) },
 		},
 		{
 			header: "DIRECTOR/CREATOR",
-			get:    func(m *movie.Movie) string { return m.ListDisplay(m.Directors) },
+			get:    func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.Directors)) },
 		},
 		{
 			header: "TAGS",
-			get:    func(m *movie.Movie) string { return m.ListDisplay(m.Tags) },
+			get:    func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.Tags)) },
 			color: func(m *movie.Movie, s string) string {
 				if !strings.Contains(s, "—") {
 					return colorize(darkOlive, s)
@@ -236,7 +236,7 @@ func movieColumns() []column {
 				return colorize(dim, s)
 			},
 		},
-		{header: "RELEASE DATE", get: func(m *movie.Movie) string { return orDash(m.ReleaseDate) }},
+		{header: "RELEASE DATE", get: func(m *movie.Movie) string { return orDash(movie.GetValue(m.ReleaseDate)) }},
 		{
 			header: "RATING",
 			get:    func(m *movie.Movie) string { return m.RatingOrWatched() },

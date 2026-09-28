@@ -81,7 +81,7 @@ var searchTitlesFn = &genai.FunctionDeclaration{
 	Name: "search_titles",
 	Description: "Search the local watch list using field/operator/value expressions. " +
 		"Fields: TITLE, DIRECTOR, TAGS, GENRE, FILM_TYPE, PROD_COMPANY, PROD_COUNTRY, LANGUAGE, STATUS, ACTOR (operators: contains, equals); " +
-		"YEAR, RATING, RELEASE (operators: >, <, ==; RELEASE values are YYYY-MM-DD); " +
+		"YEAR, RATING, RELEASE, FINISHED, ADDED (operators: >, <, ==; RELEASE, FINISHED, ADDED values are YYYY-MM-DD); " +
 		"WATCHED (operator: ==, value true/false). " +
 		"Combine multiple expressions with ', ' (comma-space) - all must match. " +
 		"Example: 'YEAR > 2000, RATING > 8'.",
@@ -110,12 +110,24 @@ var updateTitleFn = &genai.FunctionDeclaration{
 	Parameters: &genai.Schema{
 		Type: genai.TypeObject,
 		Properties: map[string]*genai.Schema{
-			"id":        {Type: genai.TypeString, Description: "The title's existing ID."},
-			"title":     {Type: genai.TypeString, Description: "New title text, if renaming."},
-			"directors": {Type: genai.TypeString, Description: "Comma-separated list of directors, replaces the existing list. "},
-			"tags":      {Type: genai.TypeString, Description: "Comma-separated list of tags, replaces the existing list."},
-			"actors":    {Type: genai.TypeString, Description: "Comma-separated list of actors, replaces the existing list."},
-			"note":      {Type: genai.TypeString, Description: "new note text, replaces the existing note."},
+			"id":    {Type: genai.TypeString, Description: "The title's existing ID."},
+			"title": {Type: genai.TypeString, Description: "New title text, if renaming."},
+			"directors": {Type: genai.TypeString, Description: "Comma-separated list of directors. " +
+				"Each entry must contain a + or - symbol as a prefix, indicating whether it is to be added or removed. " +
+				"The entry text must be 100% correct in order to be removed. " +
+				"(Example: '+John Watts, -Tony Stark, -Jimmy' will add John Watts remove Tony Stark & Jimmy)",
+			},
+			"tags": {Type: genai.TypeString, Description: "Comma-separated list of tags. " +
+				"Each entry must contain a + or - symbol as a prefix, indicating whether it is to be added or removed. " +
+				"The entry text must be 100% correct in order to be removed. " +
+				"(Example: '+John Watts, -Tony Stark, -Jimmy' will add John Watts remove Tony Stark & Jimmy)",
+			},
+			"actors": {Type: genai.TypeString, Description: "Comma-separated list of actors." +
+				"Each entry must contain a + or - symbol as a prefix, indicating whether it is to be added or removed. " +
+				"The entry text must be 100% correct in order to be removed. " +
+				"(Example: '+John Watts, -Tony Stark, -Jimmy' will add John Watts remove Tony Stark & Jimmy)",
+			},
+			"note": {Type: genai.TypeString, Description: "new note text, replaces the existing note."},
 			"rating": {
 				Type: genai.TypeNumber,
 				Description: "0.0-10.0 for a watched rating; -1 = unwatched; " +
