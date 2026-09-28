@@ -440,3 +440,13 @@ func (m *Movie) RatingOrWatched() string {
 	}
 
 }
+
+// AddedOrFinished writes out the date that a show as been added or finished
+// depending on whether it has been finished
+func (m *Movie) AddedOrFinished() string {
+	if m.Watched {
+		return m.FinishedAt
+	}
+
+	return m.AddedAt.Format(time.DateOnly)
+}

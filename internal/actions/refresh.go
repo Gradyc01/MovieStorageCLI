@@ -7,19 +7,31 @@ import (
 )
 
 func (store *Store) RefreshMovies(movies []*movie.Movie) error {
-
 	for _, m := range movies {
 		if time.Since(m.LastUpdated) >= calculateTimePassedCheck(m) {
-			if err := refreshMovie(m); err != nil {
+			if err := store.RefreshMovie(m); err != nil {
 				return err
 			}
-			if err := store.storage.Update(m); err != nil {
-				return err
-			}
-			fmt.Printf("Synced movie: %s\n", movie.GetValue(m.Title))
-			time.Sleep(time.Second)
+			//if err := store.storage.Update(m); err != nil {
+			//	return err
+			//}
+			//fmt.Printf("Synced movie: %s\n", movie.GetValue(m.Title))
+			//time.Sleep(200)
+
 		}
 	}
+	return nil
+}
+
+func (store *Store) RefreshMovie(m *movie.Movie) error {
+	if err := refreshMovie(m); err != nil {
+		return err
+	}
+	if err := store.storage.Update(m); err != nil {
+		return err
+	}
+	fmt.Printf("Synced movie: %s\n", movie.GetValue(m.Title))
+	time.Sleep(200)
 	return nil
 }
 
@@ -41,40 +53,40 @@ func refreshMovie(m *movie.Movie) error {
 		return err
 	}
 
-	refreshValue(&m.Title, refreshedMovie.Title)
-	refreshValue(&m.Year, refreshedMovie.Year)
-	refreshValue(&m.ReleaseDate, refreshedMovie.ReleaseDate)
+	m.Title = refreshValue(m.Title, refreshedMovie.Title)
+	m.Year = refreshValue(m.Year, refreshedMovie.Year)
+	m.ReleaseDate = refreshValue(m.ReleaseDate, refreshedMovie.ReleaseDate)
 
-	refreshListValue(&m.Directors, refreshedMovie.Directors)
-	refreshListValue(&m.Genres, refreshedMovie.Genres)
-	refreshListValue(&m.Tags, refreshedMovie.Tags)
-	refreshListValue(&m.ProductionCountries, refreshedMovie.ProductionCountries)
-	refreshListValue(&m.ProductionCompanies, refreshedMovie.ProductionCompanies)
-	refreshListValue(&m.SpokenLanguages, refreshedMovie.SpokenLanguages)
-	refreshListValue(&m.KnownActors, refreshedMovie.KnownActors)
+	m.Directors = refreshListValue(m.Directors, refreshedMovie.Directors)
+	m.Genres = refreshListValue(m.Genres, refreshedMovie.Genres)
+	m.Tags = refreshListValue(m.Tags, refreshedMovie.Tags)
+	m.ProductionCountries = refreshListValue(m.ProductionCountries, refreshedMovie.ProductionCountries)
+	m.ProductionCompanies = refreshListValue(m.ProductionCompanies, refreshedMovie.ProductionCompanies)
+	m.SpokenLanguages = refreshListValue(m.SpokenLanguages, refreshedMovie.SpokenLanguages)
+	m.KnownActors = refreshListValue(m.KnownActors, refreshedMovie.KnownActors)
 	return nil
 }
 
-func refreshValue[T any](currentValue *movie.Value[T], newValue movie.Value[T]) {
+func refreshValue[T any](currentValue movie.Value[T], newValue movie.Value[T]) movie.Value[T] {
 	if currentValue.EntryType == movie.MANUAL {
-		return
+		return currentValue
 	}
-	currentValue = &newValue
+	return newValue
 }
 
-func refreshListValue[T any](currentValue *[]movie.Value[T], newValue []movie.Value[T]) {
+func refreshListValue[T any](currentValue []movie.Value[T], newValue []movie.Value[T]) []movie.Value[T] {
 	var newList []movie.Value[T]
 
 	for _, v := range newValue {
 		newList = append(newList, v)
 	}
 
-	for _, v := range *currentValue {
+	for _, v := range currentValue {
 		if v.EntryType == movie.MANUAL {
 			newList = append(newList, v)
 		}
 	}
-	currentValue = &newList
+	return newList
 }
 
 func calculateTimePassedCheck(m *movie.Movie) time.Duration {

@@ -138,22 +138,24 @@ must match.
 
 Supported fields and operators:
 
-| Field | Operators | Value |
-| --- | --- | --- |
-| `TITLE` | `contains`, `equals` | Text |
-| `DIRECTOR` | `contains`, `equals` | Text |
-| `TAGS` | `contains`, `equals` | Text |
-| `YEAR` | `>`, `<`, `==` | Number |
-| `RATING` | `>`, `<`, `==` | Number |
-| `RELEASE` | `>`, `<`, `==` | `YYYY-MM-DD` |
-| `WATCHED` | `==` | `true` or `false` |
-| `GENRE` | `contains`, `equals` | Text |
-| `FILM_TYPE` | `contains`, `equals` | Text |
+| Field          | Operators | Value |
+|----------------| --- | --- |
+| `TITLE`        | `contains`, `equals` | Text |
+| `DIRECTOR`     | `contains`, `equals` | Text |
+| `TAGS`         | `contains`, `equals` | Text |
+| `YEAR`         | `>`, `<`, `==` | Number |
+| `RATING`       | `>`, `<`, `==` | Number |
+| `RELEASE`      | `>`, `<`, `==` | `YYYY-MM-DD` |
+| `ADDED`        | `>`, `<`, `==` | `YYYY-MM-DD` |
+| `FINISHED`     | `>`, `<`, `==` | `YYYY-MM-DD` |
+| `WATCHED`      | `==` | `true` or `false` |
+| `GENRE`        | `contains`, `equals` | Text |
+| `FILM_TYPE`    | `contains`, `equals` | Text |
 | `PROD_COMPANY` | `contains`, `equals` | Text |
 | `PROD_COUNTRY` | `contains`, `equals` | Text |
-| `LANGUAGE` | `contains`, `equals` | Text |
-| `STATUS` | `contains`, `equals` | Text |
-| `ACTOR` | `contains`, `equals` | Text |
+| `LANGUAGE`     | `contains`, `equals` | Text |
+| `STATUS`       | `contains`, `equals` | Text |
+| `ACTOR`        | `contains`, `equals` | Text |
 
 Examples:
 

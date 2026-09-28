@@ -122,8 +122,11 @@ func applyScore(m *movie.Movie, score float64) error {
 
 func setWatched(m *movie.Movie, watched bool) {
 	if watched {
+		if !m.Watched {
+			m.FinishedAt = time.Now().Format(time.DateOnly)
+		}
 		m.Watched = true
-		m.FinishedAt = time.Now().Format(time.DateOnly)
+
 	} else {
 		m.Watched = false
 		m.FinishedAt = movie.UNWATCHED

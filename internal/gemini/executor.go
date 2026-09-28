@@ -45,7 +45,11 @@ func (e *Executor) Run(name string, args map[string]any) (any, error) {
 
 	case "get_title":
 		id, _ := args["id"].(string)
-		return e.store.GetMovie(id)
+		m, err := e.store.GetMovie(id)
+		if err == nil {
+			display.PrintMovieDetail(m)
+		}
+		return m, err
 
 	case "search_titles":
 		expr, _ := args["expression"].(string)

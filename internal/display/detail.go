@@ -65,6 +65,11 @@ func movieDetailFields() []detailField {
 			color: func(m *movie.Movie, value string) string { return colorize(white, value) },
 		},
 		{
+			label: "Added/Finished Date",
+			get:   func(m *movie.Movie) string { return m.AddedOrFinished() },
+			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
+		},
+		{
 			label: "Production Companies",
 			get:   func(m *movie.Movie) string { return m.ListDisplay(movie.GetValueList(m.ProductionCompanies)) },
 			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
