@@ -131,7 +131,7 @@ var updateTitleFn = &genai.FunctionDeclaration{
 			"rating": {
 				Type: genai.TypeNumber,
 				Description: "0.0-10.0 for a watched rating; -1 = unwatched; " +
-					"-2 = watched but unrated; -3 = unwatched but shortlisted.",
+					"-2 = watched but unrated; -3 = unwatched but shortlisted; -4 = currently watching",
 			},
 		},
 		Required: []string{"id"},
