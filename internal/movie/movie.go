@@ -105,7 +105,7 @@ func NewMovie(title string, releaseDate string, directors []string, imdbID strin
 	if rating != -1 {
 		status = WATCHED
 	}
-	finishedAt := UNWATCHED
+	finishedAt := ""
 	if watched {
 		finishedAt = time.Now().Format(time.DateOnly)
 	}

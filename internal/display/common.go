@@ -115,3 +115,11 @@ func colorizeTitle(m *movie.Movie, paddedText string) string {
 func ratingCell(m *movie.Movie) string {
 	return applyRatingColor(m, m.RatingOrWatched())
 }
+
+// truncateText truncates text and adds 3 '.' to represent the truncated nature of it.
+func truncateText(s string, length int) string {
+	if len(s) >= length {
+		return s[:length-3] + "..."
+	}
+	return s
+}

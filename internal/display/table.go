@@ -13,6 +13,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 	"unicode/utf8"
 )
 
@@ -93,7 +94,7 @@ func PrintMovieTable(movies []*movie.Movie) error {
 		}
 
 		printMovies(pageMovies, selectedIndex)
-		PrintPageFooter(currentPage, totalPages, interactive)
+		printPageFooter(currentPage, totalPages, interactive)
 
 		var k key
 		var err error
@@ -242,6 +243,18 @@ func movieColumns() []column {
 			get:    func(m *movie.Movie) string { return m.RatingOrWatched() },
 			color:  func(m *movie.Movie, padded string) string { return colorizeRating(m, padded) },
 		},
+		{
+			header: "FINISHED",
+			get:    func(m *movie.Movie) string { return orDash(m.FinishedAt) },
+			color:  func(m *movie.Movie, padded string) string { return colorize(dim, padded) },
+		},
+		{
+			header: "ADDED",
+			get: func(m *movie.Movie) string {
+				return m.AddedAt.Format(time.DateOnly)
+			},
+			color: func(m *movie.Movie, padded string) string { return colorize(dim, padded) },
+		},
 	}
 }
 
@@ -260,7 +273,7 @@ func printMovies(movies []*movie.Movie, selectedIndex int) {
 	for i, m := range movies {
 		row := make([]string, len(cols))
 		for c, col := range cols {
-			row[c] = col.get(m)
+			row[c] = truncateText(col.get(m), 40)
 		}
 		plain[i] = row
 	}
@@ -339,13 +352,13 @@ func headersOf(cols []column) []string {
 	return out
 }
 
-// PrintPageFooter shows "Page X of Y" plus navigation hints below the
+// printPageFooter shows "Page X of Y" plus navigation hints below the
 // table. Kept separate from printMovies so the pagination loop in
 // cmd/list.go can redraw just this part if it ever needs to.
 // interactive controls which instructions make sense: raw single-key
 // arrow presses, or type-a-letter-then-Enter for terminals that can't
 // support raw mode.
-func PrintPageFooter(currentPage, totalPages int, interactive bool) {
+func printPageFooter(currentPage, totalPages int, interactive bool) {
 	pageInfo := colorize(bold, fmt.Sprintf("Page %d of %d", currentPage+1, totalPages))
 	if interactive {
 		hint := colorize(dim, "→/n: next page, ←/p: previous page, ↑: move up on page, ↓ move down on page, q/Enter: quit")

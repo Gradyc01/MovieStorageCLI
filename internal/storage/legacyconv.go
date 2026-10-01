@@ -26,7 +26,7 @@ func TryLoadingVersion1MovieStorage(data []byte) (*MovieStorage, error) {
 }
 
 func ConvertVersion1MovieToVersion2(v1 *movie.LegacyMovieVersion1) *movie.Movie {
-	finishedAt := movie.UNWATCHED
+	finishedAt := ""
 
 	if v1.Watched {
 		finishedAt = v1.AddedAt.Format(time.DateOnly)
