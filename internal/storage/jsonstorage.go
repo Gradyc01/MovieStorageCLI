@@ -129,7 +129,7 @@ func (s *JSONStorage) Add(m *movie.Movie) error {
 		}
 	}
 
-	movies = append(movies, m)
+	movies = append([]*movie.Movie{m}, movies...)
 	return s.save(movies)
 }
 

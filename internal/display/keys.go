@@ -35,6 +35,14 @@ const (
 	keyDown
 	keyEnter
 	keyQuit
+	keySort
+)
+
+// Prompts for the non-terminal fallback reader, one per screen/mode.
+const (
+	promptList   = "Enter n/p (page), u/d (select; u at top = sort), s (sort), Enter (view), or q (quit): "
+	promptSort   = "SORT MODE: n/p (choose column), u or Enter (cycle asc/desc/off), d/q/s (done): "
+	promptDetail = "Enter q (back to list) or Enter (exit to prompt): "
 )
 
 // stdinIsTerminal reports whether os.Stdin is a real, raw-mode-capable
@@ -88,6 +96,8 @@ func readKey() (key, error) {
 			return keyRight, nil
 		case 'p', 'P':
 			return keyLeft, nil
+		case 's', 'S':
+			return keySort, nil
 		}
 		return keyUnknown, nil
 	}
@@ -117,8 +127,11 @@ func readKey() (key, error) {
 // to "hold the arrow key down" without raw mode, up/down selection is
 // mapped to letters (u/d) instead, and pressing Enter with nothing
 // typed selects whatever row is currently highlighted.
-func readKeyFallback(reader *bufio.Reader) (key, error) {
-	fmt.Print("Enter n/p (page), u/d (select), Enter (view), or q (quit): ")
+//
+// The prompt is a parameter so each screen/mode can show hints that
+// match what the keys actually do there.
+func readKeyFallback(reader *bufio.Reader, prompt string) (key, error) {
+	fmt.Print(prompt)
 
 	line, err := reader.ReadString('\n')
 	if err != nil {
@@ -135,6 +148,8 @@ func readKeyFallback(reader *bufio.Reader) (key, error) {
 		return keyUp, nil
 	case "d":
 		return keyDown, nil
+	case "s":
+		return keySort, nil
 	case "":
 		return keyEnter, nil
 	case "q":

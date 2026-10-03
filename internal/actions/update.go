@@ -129,7 +129,7 @@ func setWatched(m *movie.Movie, watched bool) {
 
 	} else {
 		m.Watched = false
-		m.FinishedAt = movie.UNWATCHED
+		m.FinishedAt = ""
 	}
 }
 
