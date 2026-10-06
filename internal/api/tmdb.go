@@ -203,6 +203,30 @@ type ProductionCountry struct {
 	Name     string `json:"name"`
 }
 
+// RawProviders defers decoding of each region until we know which one we want.
+type RawProviders struct {
+	ID      int                        `json:"id"`
+	Results map[string]json.RawMessage `json:"results"`
+}
+
+// RegionProviders holds the availability data for one region.
+type RegionProviders struct {
+	Link     string     `json:"link"`
+	Flatrate []Provider `json:"flatrate,omitempty"`
+	Buy      []Provider `json:"buy,omitempty"`
+	Rent     []Provider `json:"rent,omitempty"`
+	Free     []Provider `json:"free,omitempty"`
+	Ads      []Provider `json:"ads,omitempty"`
+}
+
+// Provider is a single streaming/buy/rent provider entry.
+type Provider struct {
+	LogoPath        string `json:"logo_path"`
+	ProviderID      int    `json:"provider_id"`
+	ProviderName    string `json:"provider_name"`
+	DisplayPriority int    `json:"display_priority"`
+}
+
 // SpokenLanguage represents a struct representing a spoken language
 type SpokenLanguage struct {
 	EnglishName string `json:"english_name"`
@@ -428,6 +452,29 @@ func (c *Client) GetExternalId(filmType string, tmdbId int) (*ExternalIds, error
 		return nil, err
 	}
 	return &out, nil
+}
+
+// GetProviders gets the providers of a certain film type
+// filmType must be either 'movie' or 'tv'
+// region must be one recognized by TMDB
+func (c *Client) GetProviders(filmType string, tmdbId int, region string) (*RegionProviders, error) {
+	var outProviders *RawProviders
+
+	if err := c.get(fmt.Sprintf("/%s/%d/watch/providers", filmType, tmdbId), nil, &outProviders); err != nil {
+		return nil, err
+	}
+
+	regionData, ok := outProviders.Results[region]
+	if !ok {
+		fmt.Printf("region %q not found, perhaps there are no available sites in that region\n", region)
+		return nil, nil
+	}
+
+	var regionProviders *RegionProviders
+	if err := json.Unmarshal(regionData, &regionProviders); err != nil {
+		return nil, fmt.Errorf("decode region %s: %w", region, err)
+	}
+	return regionProviders, nil
 }
 
 // GetPerson fetches full details for a single person by TMDB ID.

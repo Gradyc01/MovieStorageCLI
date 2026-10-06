@@ -11,7 +11,7 @@ import (
 	"movie-tracker/internal/movie"
 )
 
-var CurrentStorageVersion = 2
+const CurrentStorageVersion = 3
 
 type MovieStorage struct {
 	Version int            `json:"version"`

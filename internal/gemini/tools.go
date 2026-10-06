@@ -80,7 +80,7 @@ var getTitleFn = &genai.FunctionDeclaration{
 var searchTitlesFn = &genai.FunctionDeclaration{
 	Name: "search_titles",
 	Description: "Search the local watch list using field/operator/value expressions. " +
-		"Fields: TITLE, DIRECTOR, TAGS, GENRE, FILM_TYPE, PROD_COMPANY, PROD_COUNTRY, LANGUAGE, STATUS, ACTOR (operators: contains, equals); " +
+		"Fields: TITLE, DIRECTOR, TAGS, GENRE, FILM_TYPE, PROD_COMPANY, PROD_COUNTRY, LANGUAGE, STATUS, ACTOR, STREAMING, PURCHASE, FREE (operators: contains, equals); " +
 		"YEAR, RATING, RELEASE, FINISHED, ADDED (operators: >, <, ==; RELEASE, FINISHED, ADDED values are YYYY-MM-DD); " +
 		"WATCHED (operator: ==, value true/false). " +
 		"Combine multiple expressions with ', ' (comma-space) - all must match. " +

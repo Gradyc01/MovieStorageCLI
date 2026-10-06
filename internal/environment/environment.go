@@ -23,6 +23,7 @@ var systemPropsKeys = []string{
 	"MOVIE_REPO",
 	"TMDB_API_KEY",
 	"GEMINI_API_KEY",
+	"REGION",
 }
 
 func GetVariable(variable string) (string, error) {

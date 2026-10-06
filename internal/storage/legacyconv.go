@@ -62,3 +62,52 @@ func ConvertVersion1MovieToVersion2(v1 *movie.LegacyMovieVersion1) *movie.Movie 
 		TVSeason:            tvSeason,
 	}
 }
+
+func FindConvertibleVersion(version int, data []byte) ([]*movie.Movie, error) {
+	var list []*movie.Movie
+	switch version {
+	case 2:
+		{
+			var out *LegacyMovieStorageVersion2
+			if err := json.Unmarshal(data, &out); err != nil {
+				return nil, fmt.Errorf("unmarshalling legacy movie version: %w", err)
+			}
+			for _, m := range out.Movies {
+				list = append(list, convertVersion2MovieToLatest(m))
+			}
+			return list, nil
+		}
+	}
+	return nil, fmt.Errorf("unknown legacy movie version: %d", version)
+}
+
+func convertVersion2MovieToLatest(legacyMovie *movie.LegacyMovieVersion2) *movie.Movie {
+	return &movie.Movie{
+		Version:             legacyMovie.Version,
+		ID:                  legacyMovie.ID,
+		Title:               legacyMovie.Title,
+		Year:                legacyMovie.Year,
+		ReleaseDate:         legacyMovie.ReleaseDate,
+		Watched:             legacyMovie.Watched,
+		Rating:              legacyMovie.Rating,
+		Directors:           legacyMovie.Directors,
+		ImdbID:              legacyMovie.ImdbID,
+		AddedAt:             legacyMovie.AddedAt,
+		Status:              legacyMovie.Status,
+		Genres:              legacyMovie.Genres,
+		FilmType:            legacyMovie.FilmType,
+		Tags:                legacyMovie.Tags,
+		ProductionCompanies: legacyMovie.ProductionCompanies,
+		ProductionCountries: legacyMovie.ProductionCountries,
+		SpokenLanguages:     legacyMovie.SpokenLanguages,
+		KnownActors:         legacyMovie.KnownActors,
+		TmdbID:              legacyMovie.TmdbID,
+		Notes:               legacyMovie.Notes,
+		FinishedAt:          legacyMovie.FinishedAt,
+		LastUpdated:         time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC),
+		TVSeason:            legacyMovie.TVSeason,
+		StreamingProviders:  make([]movie.Value[string], 0),
+		FreeProviders:       make([]movie.Value[string], 0),
+		PurchaseProviders:   make([]movie.Value[string], 0),
+	}
+}

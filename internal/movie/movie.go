@@ -3,6 +3,8 @@ package movie
 import (
 	"fmt"
 	"movie-tracker/internal/api"
+	"movie-tracker/internal/environment"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -67,29 +69,9 @@ type Movie struct {
 	FinishedAt          string          `json:"finished_at"`
 	LastUpdated         time.Time       `json:"last_updated"`
 	TVSeason            int             `json:"tv_season"` // 0 == No season number (movie), -1 == Legacy TV series (no season tracked)
-}
-
-type LegacyMovieVersion1 struct {
-	Version             int       `json:"version"`
-	ID                  string    `json:"id"`
-	Title               string    `json:"title"`
-	Year                int       `json:"year"`
-	ReleaseDate         string    `json:"release_date"` //Has default value of ""
-	Watched             bool      `json:"watched"`      //Has default value of false
-	Rating              float64   `json:"rating"`       //Has default value of -1
-	Directors           []string  `json:"director"`     //Has default value of ""
-	ImdbID              string    `json:"imdb_id"`      //Has default value of ""
-	AddedAt             time.Time `json:"added_at"`
-	Status              string    `json:"status"` //Can be of value watched, unwatched, unrated, shortlist, watching
-	Genres              []string  `json:"genres"`
-	FilmType            string    `json:"film_type"` //Can be of value TV or Movie
-	Tags                []string  `json:"tags"`
-	ProductionCompanies []string  `json:"production_companies"`
-	ProductionCountries []string  `json:"production_countries"`
-	SpokenLanguages     []string  `json:"spoken_languages"`
-	KnownActors         []string  `json:"known_actors"`
-	TmdbID              string    `json:"tmdb_id"`
-	Notes               string    `json:"notes"`
+	StreamingProviders  []Value[string] `json:"streaming_providers"`
+	FreeProviders       []Value[string] `json:"free_providers"`
+	PurchaseProviders   []Value[string] `json:"purchase_providers"`
 }
 
 // NewMovie is our "constructor". Go doesn't have constructors as a
@@ -98,7 +80,8 @@ type LegacyMovieVersion1 struct {
 // a reference to one shared instance, similar to how Java objects
 // are always references under the hood.
 func NewMovie(title string, releaseDate string, directors []string, imdbID string, tmdbID string, genres []string, filmType string, rating float64, tags []string,
-	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string, tvSeason int) *Movie {
+	prodCompanies []string, prodCountries []string, languages []string, actors []string, notes string, tvSeason int,
+	streamingProviders []string, freeProviders []string, purchaseProvider []string) *Movie {
 	year := getReleaseYear(releaseDate)
 	watched := rating != -1
 	status := UNWATCHED
@@ -133,6 +116,9 @@ func NewMovie(title string, releaseDate string, directors []string, imdbID strin
 		FinishedAt:          finishedAt,
 		LastUpdated:         time.Now(),
 		TVSeason:            tvSeason,
+		StreamingProviders:  ConvertArrayToValueList(streamingProviders, DATABASE),
+		FreeProviders:       ConvertArrayToValueList(freeProviders, DATABASE),
+		PurchaseProviders:   ConvertArrayToValueList(purchaseProvider, DATABASE),
 	}
 }
 
@@ -216,6 +202,11 @@ func createMovieFromTmdbMovieID(client *api.Client, tmdbID int, imdbID string, r
 	if err != nil {
 		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
 	}
+
+	streaming, free, purchase, err := findProviders(client, "movie", tmdbID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+	}
 	return NewMovie(
 		movie.Title,
 		movie.ReleaseDate,
@@ -232,6 +223,9 @@ func createMovieFromTmdbMovieID(client *api.Client, tmdbID int, imdbID string, r
 		findKnownActors(credits),
 		"",
 		0,
+		streaming,
+		free,
+		purchase,
 	), nil
 }
 
@@ -259,6 +253,10 @@ func createMovieFromTmdbTvID(client *api.Client, tmdbID int, imdbID string, rati
 		return nil, err
 	}
 
+	streaming, free, purchase, err := findProviders(client, "tv", tmdbID)
+	if err != nil {
+		return nil, fmt.Errorf("error getting movie by IMDB URL: %w", err)
+	}
 	return NewMovie(
 		tv.Name+" "+season.Name,
 		season.AirDate,
@@ -275,6 +273,9 @@ func createMovieFromTmdbTvID(client *api.Client, tmdbID int, imdbID string, rati
 		findKnownActors(credits),
 		"",
 		seasonNumber,
+		streaming,
+		free,
+		purchase,
 	), nil
 }
 
@@ -381,6 +382,42 @@ func findSeason(show *api.TVShow, seasonNumber int) (api.Season, error) {
 		}
 	}
 	return api.Season{}, fmt.Errorf("no season found with season number %d", seasonNumber)
+}
+
+// findProviders finds all the providers of the different types
+// in the order of streaming, free, purchase
+func findProviders(client *api.Client, filmType string, tmdbId int) ([]string, []string, []string, error) {
+	region, err := environment.GetVariable("REGION")
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("error getting variable region: %v", err)
+	}
+	providers, err := client.GetProviders(filmType, tmdbId, region)
+	if err != nil {
+		return nil, nil, nil, fmt.Errorf("error getting providers: %v", err)
+	}
+	if providers == nil {
+		return make([]string, 0), make([]string, 0), make([]string, 0), nil
+	}
+
+	var streamingList []string
+	var freeList []string
+	var purchaseList []string
+
+	streamingList = addProviderNamesFromList(providers.Flatrate, streamingList)
+	purchaseList = addProviderNamesFromList(providers.Buy, purchaseList)
+	purchaseList = addProviderNamesFromList(providers.Rent, purchaseList)
+	freeList = addProviderNamesFromList(providers.Free, freeList)
+	freeList = addProviderNamesFromList(providers.Ads, freeList)
+	return streamingList, freeList, purchaseList, nil
+}
+
+func addProviderNamesFromList(providers []api.Provider, currentList []string) []string {
+	for _, provider := range providers {
+		if !slices.Contains(currentList, provider.ProviderName) {
+			currentList = append(currentList, provider.ProviderName)
+		}
+	}
+	return currentList
 }
 
 // String implements the fmt.Stringer interface. In Go, if a type has

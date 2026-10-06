@@ -6,18 +6,12 @@ import (
 	"time"
 )
 
-func (store *Store) RefreshMovies(movies []*movie.Movie) error {
+func (store *Store) RefreshMovies(movies []*movie.Movie, forceRefresh bool) error {
 	for _, m := range movies {
-		if time.Since(m.LastUpdated) >= calculateTimePassedCheck(m) {
+		if time.Since(m.LastUpdated) >= calculateTimePassedCheck(m) || forceRefresh {
 			if err := store.RefreshMovie(m); err != nil {
 				return err
 			}
-			//if err := store.storage.Update(m); err != nil {
-			//	return err
-			//}
-			//fmt.Printf("Synced movie: %s\n", movie.GetValue(m.Title))
-			//time.Sleep(200)
-
 		}
 	}
 	return nil
@@ -64,6 +58,10 @@ func refreshMovie(m *movie.Movie) error {
 	m.ProductionCompanies = refreshListValue(m.ProductionCompanies, refreshedMovie.ProductionCompanies)
 	m.SpokenLanguages = refreshListValue(m.SpokenLanguages, refreshedMovie.SpokenLanguages)
 	m.KnownActors = refreshListValue(m.KnownActors, refreshedMovie.KnownActors)
+
+	m.StreamingProviders = refreshListValue(m.StreamingProviders, refreshedMovie.StreamingProviders)
+	m.FreeProviders = refreshListValue(m.FreeProviders, refreshedMovie.FreeProviders)
+	m.PurchaseProviders = refreshListValue(m.PurchaseProviders, refreshedMovie.PurchaseProviders)
 	return nil
 }
 

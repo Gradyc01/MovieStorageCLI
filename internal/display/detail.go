@@ -85,6 +85,21 @@ func movieDetailFields() []detailField {
 			color: func(m *movie.Movie, value string) string { return colorize(dim, value) },
 		},
 		{label: "Note", get: func(m *movie.Movie) string { return m.Notes }},
+		{
+			label: "Streaming Sites",
+			get:   func(m *movie.Movie) string { return orDash(m.ListDisplay(movie.GetValueList(m.StreamingProviders))) },
+			color: func(m *movie.Movie, value string) string { return colorize(white, value) },
+		},
+		{
+			label: "Rental/Purchase Sites",
+			get:   func(m *movie.Movie) string { return orDash(m.ListDisplay(movie.GetValueList(m.PurchaseProviders))) },
+			color: func(m *movie.Movie, value string) string { return colorize(white, value) },
+		},
+		{
+			label: "Free Sites",
+			get:   func(m *movie.Movie) string { return orDash(m.ListDisplay(movie.GetValueList(m.FreeProviders))) },
+			color: func(m *movie.Movie, value string) string { return colorize(white, value) },
+		},
 	}
 }
 

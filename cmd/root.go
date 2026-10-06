@@ -78,7 +78,6 @@ func init() {
 	exeDir := filepath.Dir(exePath)
 	dataPath := filepath.Join(exeDir, "movies.json")
 
-	fmt.Printf("Data path: %s\n", dataPath)
 	//store = storage.NewJSONStorage(dataPath)
 	store = actions.CreateStore(dataPath)
 

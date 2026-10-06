@@ -131,37 +131,6 @@ func (s *Store) Save(ctx context.Context) error {
 	return nil
 }
 
-// //func main() {
-// //	ctx := context.Background()
-// //
-// //	store, err := NewStore()
-// //	if err != nil {
-// //		fmt.Fprintln(os.Stderr, "setup error:", err)
-// //		os.Exit(1)
-// //	}
-// //
-// //	// 1. Pull latest state on open
-// //	movies, err := store.Load(ctx)
-// //	if err != nil {
-// //		fmt.Fprintln(os.Stderr, "load error:", err)
-// //		os.Exit(1)
-// //	}
-// //
-// //	// 2. Run your existing CLI logic against `movies` in memory.
-// //	//    (add/remove/query commands mutate this slice exactly like
-// //	//    your current local-JSON version does — no change needed there.)
-// //	//    Since add/remove may reassign the slice header (append, or
-// //	//    filtering out an element), runCLI takes a pointer to the slice
-// //	//    so those mutations are visible here for the Save() call.
-// //	runCLI(&movies) // TODO: your existing command loop / cobra commands / etc.
-// //
-// //	// 3. Push changes back on close
-// //	if err := store.Save(ctx, movies); err != nil {
-// //		fmt.Fprintln(os.Stderr, "save error:", err)
-// //		os.Exit(1)
-// //	}
-// //}
-//
 // splitOwnerRepo accepts either a bare "owner/repo" string or a full
 // GitHub URL (https://github.com/owner/repo, with or without .git,
 // trailing slash, etc.) and returns the owner and repo name.

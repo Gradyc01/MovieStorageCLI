@@ -5,13 +5,24 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="7125f58c-51bb-4650-bbca-613b6bc92b21" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/internal/display/sort.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/movie/legacymoviestruct.go" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/internal/storage/legacystoragestruct.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/refresh.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/refresh.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/repl.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/repl.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cmd/root.go" beforeDir="false" afterPath="$PROJECT_DIR$/cmd/root.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/environment.properties" beforeDir="false" afterPath="$PROJECT_DIR$/environment.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/actions/update.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/actions/update.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/display/keys.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/keys.go" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/internal/display/table.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/table.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/actions/refresh.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/actions/refresh.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/actions/search.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/actions/search.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/api/tmdb.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/api/tmdb.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/display/detail.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/display/detail.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/environment/environment.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/environment/environment.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/gemini/tools.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/gemini/tools.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/github/github.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/github/github.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/movie/movie.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/movie/movie.go" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/internal/storage/jsonstorage.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/jsonstorage.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/storage/legacyconv.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/legacyconv.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/internal/storage/storage.go" beforeDir="false" afterPath="$PROJECT_DIR$/internal/storage/storage.go" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

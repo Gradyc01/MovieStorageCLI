@@ -25,6 +25,9 @@ func (store *Store) SearchMovie(query string) ([]*movie.Movie, error) {
 			"\n ACTOR contains equals "+
 			"\n FINISHED < > == "+
 			"\n ADDED < > =="+
+			"\n STREAMING contains equals "+
+			"\n PURCHASE contains equals "+
+			"\n FREE contains equals "+
 			"\n Example Query: TITLE contains Guardians of, RATING < 9 ", err)
 	}
 

@@ -32,11 +32,12 @@ func RunInteractive() {
 
 	movies, err := store.ListMovie()
 	if err != nil {
-		fmt.Println(err)
+		fmt.Printf("Error: %v\n", err)
 		return
 	}
 
-	if err := store.RefreshMovies(movies); err != nil {
+	if err := store.RefreshMovies(movies, false); err != nil {
+		fmt.Printf("Error: %v\n", err)
 		return
 	}
 

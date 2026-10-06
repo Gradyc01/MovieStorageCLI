@@ -78,7 +78,7 @@ func (s *JSONStorage) load() ([]*movie.Movie, error) {
 	}
 
 	if probe.Version != CurrentStorageVersion {
-		return nil, fmt.Errorf("storage file version mismatch (expected %d, got %d)", CurrentStorageVersion, probe.Version)
+		return FindConvertibleVersion(probe.Version, data)
 	}
 
 	if err := json.Unmarshal(data, &movieStorage); err != nil {
@@ -95,7 +95,10 @@ func (s *JSONStorage) save(movies []*movie.Movie) error {
 	// MarshalIndent produces pretty-printed JSON (2-space indent) so
 	// the file is human-readable if you ever open it directly — useful
 	// while learning/debugging.
-	data, err := json.MarshalIndent(MovieStorage{Version: CurrentStorageVersion, Movies: movies}, "", "  ")
+	data, err := json.MarshalIndent(MovieStorage{
+		Version: CurrentStorageVersion,
+		Movies:  movies,
+	}, "", "  ")
 	if err != nil {
 		return fmt.Errorf("encoding movies: %w", err)
 	}
@@ -242,6 +245,12 @@ func evaluate(parameter string, comparator string, targetValue string, m *movie.
 		return dateComparator(targetValue, m.FinishedAt, comparator)
 	case "ADDED":
 		return dateComparator(targetValue, m.AddedAt.Format(time.DateOnly), comparator)
+	case "STREAMING":
+		return arrayStringComparator(targetValue, movie.GetValueList(m.StreamingProviders), comparator)
+	case "PURCHASE":
+		return arrayStringComparator(targetValue, movie.GetValueList(m.PurchaseProviders), comparator)
+	case "FREE":
+		return arrayStringComparator(targetValue, movie.GetValueList(m.FreeProviders), comparator)
 	default:
 		return false
 	}
